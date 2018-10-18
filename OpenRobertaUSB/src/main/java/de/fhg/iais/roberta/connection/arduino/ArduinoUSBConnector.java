@@ -129,6 +129,10 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
+                    // if the user disconnected check the arduino type again, it might've changed
+                    if (this.userDisconnect) {
+                        findRobot();
+                    }
                     this.arducomm = new ArduinoCommunicator(this.brickName, this.type);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
