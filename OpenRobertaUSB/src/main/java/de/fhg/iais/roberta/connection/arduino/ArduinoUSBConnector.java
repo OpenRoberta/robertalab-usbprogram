@@ -2,7 +2,7 @@ package de.fhg.iais.roberta.connection.arduino;
 
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.ORAtokenGenerator;
+import de.fhg.iais.roberta.util.ORATokenGenerator;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +30,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
     private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
 
     private String portName = null;
-    private ArduinoCommunicator arducomm = null;
+    private ArduinoCommunicator arduinoCommunicator = null;
     private ArduinoType type = ArduinoType.NONE;
 
     private final Map<Integer, String> readIdFileErrors = new HashMap<>();
@@ -64,13 +65,13 @@ public class ArduinoUSBConnector extends AbstractConnector {
     }
 
     private void loadArduinoIds() {
-        File f = new File(ARDUINO_ID_FILE);
-        if (!f.exists()) {
+        File file = new File(ARDUINO_ID_FILE);
+        if (!file.exists()) {
             LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILE);
-            f = new File(getClass().getClassLoader().getResource(ARDUINO_ID_FILE).getFile());
+            file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(ARDUINO_ID_FILE)).getFile());
         }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             int lineNr = 1;
             while ((line = br.readLine()) != null) {
@@ -86,8 +87,10 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 }
                 lineNr++;
             }
+        } catch ( FileNotFoundException e ) {
+            LOG.error("Could not find file {}: {}", ARDUINO_ID_FILE, e.getMessage());
         } catch ( IOException e ) {
-            LOG.error("Something went wrong with the {} file.", ARDUINO_ID_FILE);
+            LOG.error("Something went wrong with the {} file: {}", ARDUINO_ID_FILE, e.getMessage());
             this.readIdFileErrors.put(0, e.getMessage());
         }
     }
@@ -99,10 +102,13 @@ public class ArduinoUSBConnector extends AbstractConnector {
     @Override
     public boolean findRobot() {
         if ( SystemUtils.IS_OS_LINUX ) {
+            LOG.debug("Linux detected: searching for Arduinos");
             this.type = findArduinoLinux();
         } else if ( SystemUtils.IS_OS_WINDOWS ) {
+            LOG.debug("Windows detected: searching for Arduinos");
             this.type = findArduinoWindows();
         } else if ( SystemUtils.IS_OS_MAC_OSX ) {
+            LOG.debug("MacOS detected: searching for Arduinos");
             this.type = findArduinoMac();
         }
         switch ( this.type ) {
@@ -131,16 +137,13 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     if (this.userDisconnect) {
                         findRobot();
                     }
-                    this.arducomm = new ArduinoCommunicator(this.brickName, this.type);
+                    this.arduinoCommunicator = new ArduinoCommunicator(this.brickName, this.type);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
                     break;
                 }
                 break;
             case WAIT_EXECUTION:
-                this.state = State.WAIT_EXECUTION;
-                notifyConnectionStateChanged(this.state);
-
                 this.state = State.WAIT_FOR_CMD;
                 notifyConnectionStateChanged(this.state);
 
@@ -151,14 +154,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 Thread.sleep(1000);
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
-                this.token = ORAtokenGenerator.generateToken();
+                this.token = ORATokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
                 notifyConnectionStateChanged(this.state);
-                this.brickData = this.arducomm.getDeviceInfo();
+                this.brickData = this.arduinoCommunicator.getDeviceInfo();
                 this.brickData.put(KEY_TOKEN, this.token);
                 this.brickData.put(KEY_CMD, CMD_REGISTER);
                 try {
-                    JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
+                    JSONObject serverResponse = this.serverCommunicator.pushRequest(this.brickData);
                     String command = serverResponse.getString("cmd");
                     switch ( command ) {
                         case CMD_REPEAT:
@@ -181,19 +184,19 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 }
                 break;
             case WAIT_FOR_CMD:
-                this.brickData = this.arducomm.getDeviceInfo();
+                this.brickData = this.arduinoCommunicator.getDeviceInfo();
                 this.brickData.put(KEY_TOKEN, this.token);
                 this.brickData.put(KEY_CMD, CMD_PUSH);
                 try {
-                    JSONObject response = this.servcomm.pushRequest(this.brickData);
+                    JSONObject response = this.serverCommunicator.pushRequest(this.brickData);
                     String cmdKey = response.getString(KEY_CMD);
                     if ( cmdKey.equals(CMD_REPEAT) ) {
                         break;
                     } else if ( cmdKey.equals(CMD_DOWNLOAD) ) {
                         LOG.info("Download user program");
                         try {
-                            byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                            String filename = this.servcomm.getFilename();
+                            byte[] binaryfile = this.serverCommunicator.downloadProgram(this.brickData);
+                            String filename = this.serverCommunicator.getFilename();
                             File temp = File.createTempFile(filename, "");
 
                             temp.deleteOnExit();
@@ -208,7 +211,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
                             this.state = State.WAIT_UPLOAD;
                             notifyConnectionStateChanged(this.state);
-                            this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
+                            this.arduinoCommunicator.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
                             notifyConnectionStateChanged(this.state);
                         } catch ( IOException io ) {
@@ -316,7 +319,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         File devices = new File("/sys/bus/usb/devices");
 
         // check every usb device
-        for ( File devicesDirectories : devices.listFiles() ) {
+        for ( File devicesDirectories : Objects.requireNonNull(devices.listFiles()) ) {
             File idVendorFile = new File(devicesDirectories, "idVendor");
             File idProductFile = new File(devicesDirectories, "idProduct");
 

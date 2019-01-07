@@ -20,26 +20,26 @@ import java.io.IOException;
  *
  * @author dpyka
  */
-public class EV3Communicator {
+class EV3Communicator {
 
-    private final String brickIp;
-    private final String brickinfo;
-    private final String brickprogram;
-    private final String brickfirmware;
+    private static final int CONNECT_TIMEOUT = 3000;
 
-    private final CloseableHttpClient httpclient;
+    private final String brickInfo;
+    private final String brickProgram;
+    private final String brickFirmware;
+
+    private final CloseableHttpClient httpClient;
 
     /**
      * @param brickIp is 10.0.1.1 for leJOS
      */
-    public EV3Communicator(String brickIp) {
-        this.brickIp = brickIp;
-        this.brickinfo = this.brickIp + "/brickinfo";
-        this.brickprogram = this.brickIp + "/program";
-        this.brickfirmware = this.brickIp + "/firmware";
+    EV3Communicator(String brickIp) {
+        this.brickInfo = brickIp + "/brickinfo";
+        this.brickProgram = brickIp + "/program";
+        this.brickFirmware = brickIp + "/firmware";
 
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(3000).setSocketTimeout(3000).build();
-        this.httpclient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(CONNECT_TIMEOUT).setSocketTimeout(CONNECT_TIMEOUT).build();
+        this.httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
     }
 
     /**
@@ -48,58 +48,56 @@ public class EV3Communicator {
      *
      * @param command String CMD_REGISTER or CMD_REPEAT
      * @return JSONObject Information about the EV3 like brickname, versions, battery, ...
-     * @throws IOException
+     * @throws IOException should only occur if you disconnect the cable
      */
-    public JSONObject pushToBrick(String command) throws IOException {
+    JSONObject pushToBrick(String command) throws IOException {
         JSONObject request = new JSONObject();
         request.put(IConnector.KEY_CMD, command);
-        HttpPost post = new HttpPost("http://" + this.brickinfo);
-        StringEntity jsoncontent = new StringEntity(request.toString(), ContentType.create("application/json", "UTF-8"));
-        post.setEntity(jsoncontent);
+        HttpPost post = new HttpPost("http://" + this.brickInfo);
+        HttpEntity jsonContent = new StringEntity(request.toString(), ContentType.create("application/json", "UTF-8"));
+        post.setEntity(jsonContent);
 
-        CloseableHttpResponse response = this.httpclient.execute(post);
-        HttpEntity entity = response.getEntity();
-        JSONObject responseJSON = new JSONObject(new String(EntityUtils.toString(entity)));
-
-        response.close();
-        return responseJSON;
+        try(CloseableHttpResponse response = this.httpClient.execute(post)) {
+            HttpEntity entity = response.getEntity();
+            return new JSONObject(EntityUtils.toString(entity));
+        }
     }
 
     /**
      * Upload a binary user program to the EV3. It uses http POST.
      *
-     * @param binaryfile
-     * @param filename
-     * @return
+     * @param binaryFile the binary file to be uploaded
+     * @param filename the filename it should have on the brick
+     * @return the result of the upload
      * @throws IOException should only occur if you disconnect the cable
      */
-    public JSONObject uploadProgram(byte[] binaryfile, String filename) throws IOException {
-        HttpPost post = new HttpPost("http://" + this.brickprogram);
-        return uploadBinary(post, binaryfile, filename);
+    JSONObject uploadProgram(byte[] binaryFile, String filename) throws IOException {
+        HttpPost post = new HttpPost("http://" + this.brickProgram);
+        return uploadBinary(post, binaryFile, filename);
     }
 
     /**
      * Upload a binary system file to the EV3. It uses http POST.
      *
-     * @param binaryfile
-     * @param filename
-     * @return
+     * @param binaryFile the binary file to be uploaded
+     * @param filename the filename it should have on the brick
+     * @return the result of the upload
      * @throws IOException should only occur if you disconnect the cable
      */
-    public JSONObject uploadFirmwareFile(byte[] binaryfile, String filename) throws IOException {
-        HttpPost post = new HttpPost("http://" + this.brickfirmware);
-        return uploadBinary(post, binaryfile, filename);
+    JSONObject uploadFirmwareFile(byte[] binaryFile, String filename) throws IOException {
+        HttpPost post = new HttpPost("http://" + this.brickFirmware);
+        return uploadBinary(post, binaryFile, filename);
     }
 
-    private JSONObject uploadBinary(HttpPost post, byte[] binaryfile, String filename) throws IOException {
-        ByteArrayEntity content = new ByteArrayEntity(binaryfile);
+    private JSONObject uploadBinary(HttpPost post, byte[] binaryFile, String filename) throws IOException {
+        HttpEntity content = new ByteArrayEntity(binaryFile);
         post.setEntity(content);
         post.setHeader("Filename", filename);
-        CloseableHttpResponse response = this.httpclient.execute(post);
-        HttpEntity entity = response.getEntity();
-        JSONObject jsonresponse = new JSONObject(new String(EntityUtils.toString(entity)));
-        response.close();
-        return jsonresponse;
+
+        try(CloseableHttpResponse response = this.httpClient.execute(post)) {
+            HttpEntity entity = response.getEntity();
+            return new JSONObject(EntityUtils.toString(entity));
+        }
     }
 
     /**
@@ -107,7 +105,7 @@ public class EV3Communicator {
      *
      * @throws IOException should only occur if you disconnect the cable
      */
-    public void disconnectBrick() throws IOException {
+    void disconnectBrick() throws IOException {
         pushToBrick("abort");
     }
 
@@ -116,16 +114,16 @@ public class EV3Communicator {
      *
      * @throws IOException should only occur if you disconnect the cable
      */
-    public void restartBrick() throws IOException {
+    void restartBrick() throws IOException {
         pushToBrick("update");
     }
 
     /**
      * Shut down the connection to the EV3.
      */
-    public void shutdown() {
+    void shutdown() {
         try {
-            this.httpclient.close();
+            this.httpClient.close();
         } catch ( IOException e ) {
             // ok
         }
@@ -137,7 +135,7 @@ public class EV3Communicator {
      * @return true (as string) if a program is running, false (as string) if no program is running.
      * @throws IOException should only occur if you disconnect the cable
      */
-    public String checkBrickState() throws IOException {
+    String checkBrickState() throws IOException {
         return pushToBrick(IConnector.CMD_ISRUNNING).getString("isrunning");
     }
 }

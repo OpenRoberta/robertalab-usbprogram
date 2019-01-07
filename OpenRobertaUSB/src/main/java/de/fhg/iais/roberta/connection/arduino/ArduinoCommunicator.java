@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-public class ArduinoCommunicator {
+class ArduinoCommunicator {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoCommunicator.class);
 
     private final Properties commProperties;
@@ -18,13 +18,13 @@ public class ArduinoCommunicator {
     private final String brickName;
     private final ArduinoType type;
 
-    public ArduinoCommunicator(String brickName, ArduinoType type) {
+    ArduinoCommunicator(String brickName, ArduinoType type) {
         this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
         this.brickName = brickName;
         this.type = type;
     }
 
-    public void setParameters() {
+    private void setParameters() {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             this.avrPath = this.commProperties.getProperty("WinPath");
             this.avrConfPath = this.commProperties.getProperty("WinConfPath");
@@ -40,7 +40,7 @@ public class ArduinoCommunicator {
         }
     }
 
-    public JSONObject getDeviceInfo() {
+    JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
         deviceInfo.put("firmwarename", this.type.toString());
@@ -50,7 +50,7 @@ public class ArduinoCommunicator {
         return deviceInfo;
     }
 
-    public void uploadFile(String portName, String filePath) {
+    void uploadFile(String portName, String filePath) {
         setParameters();
         String portPath = "/dev/";
         if ( SystemUtils.IS_OS_WINDOWS ) {
@@ -71,14 +71,14 @@ public class ArduinoCommunicator {
                     cArg = "-cavrisp2";
                     eArg = "-e";
                     break;
-                default: // take uno config as default, this is used by uno, nano, botnroll and mbot
+                default: // take uno config as default, this is used by Uno, Nano, Bot'n Roll and Mbot
                     pArg = "-patmega328p";
                     cArg = "-carduino";
                     break;
             }
 
             LOG.info("Starting to upload program {} to {}{}", filePath, portPath, portName);
-            ProcessBuilder procBuilder = new ProcessBuilder(this.avrPath,
+            ProcessBuilder processBuilder = new ProcessBuilder(this.avrPath,
                     "-v",
                     "-D",
                     pArg,
@@ -88,18 +88,18 @@ public class ArduinoCommunicator {
                     "-P" + portPath + portName,
                     eArg);
 
-//            procBuilder.redirectInput(Redirect.INHERIT);
-//            procBuilder.redirectOutput(Redirect.INHERIT);
-//            procBuilder.redirectError(Redirect.INHERIT);
+//            processBuilder.redirectInput(Redirect.INHERIT);
+//            processBuilder.redirectOutput(Redirect.INHERIT);
+//            processBuilder.redirectError(Redirect.INHERIT);
 
-            Process p = procBuilder.start();
-            int ecode = p.waitFor();
-            if (ecode == 0) {
+            Process p = processBuilder.start();
+            int eCode = p.waitFor();
+            if (eCode == 0) {
                 LOG.info("Program uploaded successfully");
             } else {
-                LOG.info("Program was unable to be uploaded: {}", ecode);
+                LOG.info("Program was unable to be uploaded: {}", eCode);
             }
-            LOG.debug("Exit code {}", ecode);
+            LOG.debug("Exit code {}", eCode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());
         }

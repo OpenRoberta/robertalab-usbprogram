@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.ResourceBundle;
@@ -26,14 +27,14 @@ public class UIController implements Observer {
     private static final Logger LOG = LoggerFactory.getLogger(UIController.class);
 
     private final Map<String, IConnector> connectorMap = new HashMap<>();
-    private IConnector connector;
+    private IConnector connector = null;
     private final ConnectionView conView;
     private boolean connected;
     private final ResourceBundle rb;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final SerialMonitor serialMonitor;
-    private Future<Void> serialLoggingFuture;
+    private Future<Void> serialLoggingFuture = null;
 
     public UIController(ConnectionView conView, ResourceBundle rb) {
         this.conView = conView;
@@ -105,13 +106,18 @@ public class UIController implements Observer {
         if ( this.conView.isCustomAddressSelected() ) {
             String ip = this.conView.getCustomIP();
             String port = this.conView.getCustomPort();
-            if ( (ip != null) && (port != null) && !ip.isEmpty() && !port.isEmpty() ) {
-                String address = ip + ':' + port;
-                LOG.info("Valid custom address {}", address);
-                this.connector.updateCustomServerAddress(address);
-            } else {
+            if ( ip.isEmpty() ) {
                 LOG.info("Invalid custom address (null or empty) - Using default address");
                 this.connector.resetToDefaultServerAddress();
+            } else {
+                if ( port.isEmpty() ) {
+                    LOG.info("Valid custom ip {}, using default ports", ip);
+                    this.connector.updateCustomServerAddress(ip);
+                } else {
+                    String address = ip + ':' + port;
+                    LOG.info("Valid custom address {}", address);
+                    this.connector.updateCustomServerAddress(address);
+                }
             }
         } else {
             this.connector.resetToDefaultServerAddress();
@@ -138,7 +144,7 @@ public class UIController implements Observer {
                     this.conView,
                     this.rb.getString("attention"),
                     this.rb.getString("confirmCloseInfo"),
-                    new ImageIcon(getClass().getClassLoader().getResource("images/Roberta.png")),
+                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
                     buttons);
             if ( n == 0 ) {
                 if ( this.connector != null ) {
@@ -157,8 +163,8 @@ public class UIController implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
-        State state = (State) arg;
+    public void update(Observable observable, Object o) {
+        State state = (State) o;
         LOG.debug("update {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
@@ -226,7 +232,7 @@ public class UIController implements Observer {
             this.rb.getString("about"),
             this.rb.getString("aboutInfo"),
             new ImageIcon(
-                new ImageIcon(getClass().getClassLoader().getResource("images/iais_logo.gif"))
+                new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif")))
                     .getImage()
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }

@@ -4,17 +4,16 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Observable;
 import java.util.ResourceBundle;
 
 public abstract class AbstractConnector extends Observable implements IConnector {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
 
-    protected String serverIp = "localhost";
-    protected String serverPort = "1999";
-    protected final String serverAddress;
+    private final String serverAddress;
 
-    protected ServerCommunicator servcomm = null;
+    protected ServerCommunicator serverCommunicator = null;
 
     protected JSONObject brickData = null;
 
@@ -24,11 +23,10 @@ public abstract class AbstractConnector extends Observable implements IConnector
     protected boolean userDisconnect = false;
 
     protected AbstractConnector(ResourceBundle serverProps, String brickName) {
-        if ( serverProps != null ) {
-            this.serverIp = serverProps.getString("serverIp");
-            this.serverPort = serverProps.getString("serverPort");
-        }
-        this.serverAddress = this.serverIp + ':' + this.serverPort;
+        Objects.requireNonNull(serverProps);
+        String serverIp = serverProps.getString("serverIp");
+        String serverPort = serverProps.getString("serverPort");
+        this.serverAddress = serverIp + ':' + serverPort;
         this.brickName = brickName;
     }
 
@@ -93,28 +91,28 @@ public abstract class AbstractConnector extends Observable implements IConnector
 
     @Override
     public void updateCustomServerAddress(String customServerAddress) {
-        this.servcomm.updateCustomServerAddress(customServerAddress);
+        this.serverCommunicator.updateCustomServerAddress(customServerAddress);
         LOG.info("Now using custom address {}", customServerAddress);
     }
 
     @Override
     public void resetToDefaultServerAddress() {
-        this.servcomm.updateCustomServerAddress(this.serverAddress);
+        this.serverCommunicator.updateCustomServerAddress(this.serverAddress);
         LOG.info("Now using default address {}", this.serverAddress);
     }
 
     private void setupServerCommunicator() {
-        this.servcomm = new ServerCommunicator(this.serverAddress);
+        this.serverCommunicator = new ServerCommunicator(this.serverAddress);
     }
 
     /**
      * Reset the USB program to the start state (discover).
      *
-     * @param additionalerrormessage Display a popup with error message. If this is null, we do not want to display the tooltip.
+     * @param additionalErrorMessage Display a popup with error message. If this is null, we do not want to display the tooltip.
      */
-    protected void reset(State additionalerrormessage) {
-        if ( !this.userDisconnect && (additionalerrormessage != null) ) {
-            notifyConnectionStateChanged(additionalerrormessage);
+    protected void reset(State additionalErrorMessage) {
+        if ( !this.userDisconnect && (additionalErrorMessage != null) ) {
+            notifyConnectionStateChanged(additionalErrorMessage);
         }
         this.userDisconnect = false;
         this.state = State.DISCOVER;

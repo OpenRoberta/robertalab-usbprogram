@@ -3,7 +3,7 @@ package de.fhg.iais.roberta.connection.ev3;
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
-import de.fhg.iais.roberta.util.ORAtokenGenerator;
+import de.fhg.iais.roberta.util.ORATokenGenerator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 
 /**
- * Intended to be used as Singleton(!). This class handles two connections:</br>
- * robot<->USB program: {@link EV3Communicator}</br>
- * USB program<->Open Roberta server: {@link ServerCommunicator}</br>
+ * Intended to be used as Singleton(!). This class handles two connections:
+ * robot<->USB program: {@link EV3Communicator}
+ * USB program<->Open Roberta server: {@link ServerCommunicator}
  * After setting up an object of this class, you want to run this in a separate thread, because our protocol contains blocking http requests.
  * The state will be changed from the gui in another thread.
  *
@@ -77,7 +77,6 @@ public class EV3USBConnector extends AbstractConnector {
                 notifyConnectionStateChanged(this.state);
                 break;
             case WAIT_EXECUTION:
-                this.state = State.WAIT_EXECUTION;
                 notifyConnectionStateChanged(this.state);
                 try {
                     if ( this.ev3comm.checkBrickState().equals("true") ) {
@@ -109,7 +108,7 @@ public class EV3USBConnector extends AbstractConnector {
                 }
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
-                this.token = ORAtokenGenerator.generateToken();
+                this.token = ORATokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
                 notifyConnectionStateChanged(State.WAIT_FOR_SERVER);
                 try {
@@ -126,7 +125,7 @@ public class EV3USBConnector extends AbstractConnector {
                         LOG.info("User is clicking connect togglebutton too fast!");
                         break;
                     }
-                    JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
+                    JSONObject serverResponse = this.serverCommunicator.pushRequest(this.brickData);
                     String command = serverResponse.getString("cmd");
                     if ( command.equals(CMD_REPEAT) ) {
 
@@ -162,7 +161,7 @@ public class EV3USBConnector extends AbstractConnector {
                 }
                 String responseCommandFromServer;
                 try {
-                    responseCommandFromServer = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
+                    responseCommandFromServer = this.serverCommunicator.pushRequest(this.brickData).getString(KEY_CMD);
                 } catch ( IOException | JSONException servererror ) {
                     // continue to default block
                     LOG.info("{} Server response not ok {}", State.WAIT_FOR_CMD, servererror.getMessage());
@@ -187,8 +186,8 @@ public class EV3USBConnector extends AbstractConnector {
                     }
                     try {
                         for ( String fwfile : this.fwfiles ) {
-                            byte[] binaryfile = this.servcomm.downloadFirmwareFile(lejosVersion + fwfile);
-                            this.ev3comm.uploadFirmwareFile(binaryfile, this.servcomm.getFilename());
+                            byte[] binaryfile = this.serverCommunicator.downloadFirmwareFile(lejosVersion + fwfile);
+                            this.ev3comm.uploadFirmwareFile(binaryfile, this.serverCommunicator.getFilename());
                         }
                         this.ev3comm.restartBrick();
                         LOG.info("Firmware update successful. Restarting EV3 now!");
@@ -201,8 +200,8 @@ public class EV3USBConnector extends AbstractConnector {
                 } else if ( responseCommandFromServer.equals(CMD_DOWNLOAD) ) {
                     LOG.info("Download user program");
                     try {
-                        byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                        String filename = this.servcomm.getFilename();
+                        byte[] binaryfile = this.serverCommunicator.downloadProgram(this.brickData);
+                        String filename = this.serverCommunicator.getFilename();
                         this.ev3comm.uploadProgram(binaryfile, filename);
                         this.state = State.WAIT_EXECUTION;
                     } catch ( IOException e ) {

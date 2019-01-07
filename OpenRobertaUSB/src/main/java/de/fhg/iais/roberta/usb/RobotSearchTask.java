@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -17,13 +18,14 @@ public class RobotSearchTask implements Callable<IConnector> {
     private final UIController controller;
 
     public RobotSearchTask(List<IConnector> connectorList, UIController controller) {
-        this.connectorList = connectorList;
+        this.connectorList = Collections.unmodifiableList(connectorList);
         this.controller = controller;
     }
 
     private boolean updateFoundRobots(Collection<IConnector> foundRobots) {
         boolean updated = false;
         for ( IConnector connector : this.connectorList ) {
+            LOG.debug("Looking for {}", connector.getBrickName());
             if (connector.findRobot()) {
                 if (!foundRobots.contains(connector)) {
                     foundRobots.add(connector);

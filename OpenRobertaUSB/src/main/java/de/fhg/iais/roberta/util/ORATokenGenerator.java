@@ -7,10 +7,11 @@ import java.util.Random;
  *
  * @author dpyka
  */
-public class ORAtokenGenerator {
+public class ORATokenGenerator {
 
-    private static final String alphabet = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
-    private static final int n = alphabet.length();
+    private static final String ALPHABET = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+    private static final int ALPHABET_LENGTH = ALPHABET.length();
+    private static final int TOKEN_LENGTH = 8;
 
     /**
      * Create a new token as String of 8 characters length.
@@ -18,11 +19,11 @@ public class ORAtokenGenerator {
      * @return The token on which the brick is being linked to a client.
      */
     public static String generateToken() {
-        String token = "";
+        StringBuilder sb = new StringBuilder(TOKEN_LENGTH);
         Random random = new Random();
         for ( int i = 0; i < 8; i++ ) {
-            token = token + alphabet.charAt(random.nextInt(n));
+            sb.append(ALPHABET.charAt(random.nextInt(ALPHABET_LENGTH)));
         }
-        return token;
+        return sb.toString();
     }
 }

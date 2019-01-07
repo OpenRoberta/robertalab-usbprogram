@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
 import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -9,16 +8,14 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-
-//import java.io.BufferedInputStream;
+import java.util.Map.Entry;
 
 /**
  * The server communicator runs the server protocol on behalf of the actual robot hardware.
@@ -29,9 +26,11 @@ import java.util.Map;
  */
 public class ServerCommunicator {
 
-    private String serverpushAddress;
-    private String serverdownloadAddress;
-    private String serverupdateAddress;
+    private static final int CONNECT_TIMEOUT = 5000;
+
+    private String serverPushAddress = null;
+    private String serverDownloadAddress = null;
+    private String serverUpdateAddress = null;
 
     private String filename = "";
 
@@ -48,9 +47,9 @@ public class ServerCommunicator {
      * @param customServerAddress for example localhost:1999 or 192.168.178.10:1337
      */
     public void updateCustomServerAddress(String customServerAddress) {
-        this.serverpushAddress = customServerAddress + "/rest/pushcmd";
-        this.serverdownloadAddress = customServerAddress + "/rest/download";
-        this.serverupdateAddress = customServerAddress + "/rest/update";
+        this.serverPushAddress = customServerAddress + "/rest/pushcmd";
+        this.serverDownloadAddress = customServerAddress + "/rest/download";
+        this.serverUpdateAddress = customServerAddress + "/rest/update";
     }
 
     /**
@@ -68,30 +67,26 @@ public class ServerCommunicator {
      * @return response from the server
      * @throws IOException if the server is unreachable for whatever reason.
      */
-    public JSONObject pushRequest(JSONObject requestContent) throws IOException, JSONException {
-        HashMap<String, String> requestProperties = new HashMap<>();
+    public JSONObject pushRequest(JSONObject requestContent) throws IOException {
+        Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/json");
 
-        URLConnection conn = openURLConnection(this.serverpushAddress, "POST", requestProperties);
+        URLConnection conn = openURLConnection(this.serverPushAddress, "POST", requestProperties);
         sendServerRequest(requestContent, conn);
         String responseText = getServerResponse(conn);
 
         return new JSONObject(responseText);
     }
 
-    private URLConnection openURLConnection(String url, String requestMethod, Map<String, String> requestProperties)
-        throws MalformedURLException,
-        IOException,
-        ProtocolException {
+    private static URLConnection openURLConnection(String url, String requestMethod, Map<String, String> requestProperties) throws IOException {
         URLConnection conn;
         try {
-            if (!url.contains("localhost")) {
-                conn = getHttpsConnection(url, requestMethod, requestProperties);
-                conn.connect();
-            } else { // workaround for HttpParser warning serverside when connecting via localhost
+            if ( url.contains("localhost") ) { // workaround for HttpParser warning server side when connecting via localhost
                 conn = getHttpConnection(url, requestMethod, requestProperties);
-                conn.connect();
+            } else {
+                conn = getHttpsConnection(url, requestMethod, requestProperties);
             }
+            conn.connect();
         } catch ( IOException ioException ) {
             conn = getHttpConnection(url, requestMethod, requestProperties);
             conn.connect();
@@ -99,104 +94,84 @@ public class ServerCommunicator {
         return conn;
     }
 
-    private HttpURLConnection getHttpConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties)
-        throws MalformedURLException,
-        IOException,
-        ProtocolException {
+    private static HttpURLConnection getHttpConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties) throws IOException {
         URL url = new URL("http://" + urlAddress);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        setURLConnectionProperties(conn, "POST", requestProperties);
+        setURLConnectionProperties(conn, requestMethod, requestProperties);
         return conn;
     }
 
-    private HttpsURLConnection getHttpsConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties)
-        throws MalformedURLException,
-        IOException,
-        ProtocolException {
+    private static HttpsURLConnection getHttpsConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties) throws IOException {
         URL url = new URL("https://" + urlAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         setURLConnectionProperties(conn, requestMethod, requestProperties);
         return conn;
     }
 
-    private void setURLConnectionProperties(HttpURLConnection conn, String requestMethod, Map<String, String> requestProperties) throws ProtocolException {
-        conn.setConnectTimeout(5000);
+    private static void setURLConnectionProperties(HttpURLConnection conn, String requestMethod, Map<String, String> requestProperties)
+        throws ProtocolException {
+        conn.setConnectTimeout(CONNECT_TIMEOUT);
         conn.setDoOutput(true);
         conn.setRequestMethod(requestMethod);
 
-        for ( Map.Entry<String, String> property : requestProperties.entrySet() ) {
+        for ( Entry<String, String> property : requestProperties.entrySet() ) {
             conn.setRequestProperty(property.getKey(), property.getValue());
         }
         conn.setRequestProperty("Accept-Charset", "UTF-8");
         conn.setRequestProperty("Content-Type", "application/json");
     }
 
-    private String getServerResponse(URLConnection conn) throws IOException {
+    private static String getServerResponse(URLConnection conn) throws IOException {
         InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
-        String responseText = "";
-        if ( responseEntity != null ) {
-            responseText = IOUtils.toString(responseEntity, "UTF-8");
-        }
+        String responseText = IOUtils.toString(responseEntity, "UTF-8");
         responseEntity.close();
         return responseText;
     }
 
-    private void sendServerRequest(JSONObject requestContent, URLConnection conn) throws IOException, UnsupportedEncodingException {
-        OutputStream os = conn.getOutputStream();
-        os.write(requestContent.toString().getBytes("UTF-8"));
-        os.flush();
-        os.close();
+    private static void sendServerRequest(JSONObject requestContent, URLConnection conn) throws IOException {
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(requestContent.toString().getBytes(StandardCharsets.UTF_8));
+            os.flush();
+        }
     }
 
     /**
      * Downloads a user program from the server as binary. The http POST is used here.
      *
      * @param requestContent all the content of a standard push request.
-     * @return
+     * @return the binary file of the response
      * @throws IOException if the server is unreachable or something is wrong with the binary content.
      */
     public byte[] downloadProgram(JSONObject requestContent) throws IOException {
-        HashMap<String, String> requestProperties = new HashMap<>();
+        Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/octet-stream");
 
-        URLConnection conn = openURLConnection(this.serverdownloadAddress, "POST", requestProperties);
+        URLConnection conn = openURLConnection(this.serverDownloadAddress, "POST", requestProperties);
         sendServerRequest(requestContent, conn);
 
-        byte[] binaryfile = getBinaryFileFromResponse(conn);
-
-        return binaryfile;
+        return getBinaryFileFromResponse(conn);
     }
 
     /**
      * Basically the same as downloading a user program but without any information about the EV3. It uses http GET(!).
      *
      * @param fwFile name of the file in the url as suffix ( .../rest/update/ev3menu)
-     * @return
+     * @return the binary file of the response
      * @throws IOException if the server is unreachable or something is wrong with the binary content.
      */
     public byte[] downloadFirmwareFile(String fwFile) throws IOException {
-
-        HashMap<String, String> requestProperties = new HashMap<>();
+        Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/octet-stream");
 
-        URLConnection conn = openURLConnection(this.serverupdateAddress + "/" + fwFile, "GET", requestProperties);
+        URLConnection conn = openURLConnection(this.serverUpdateAddress + '/' + fwFile, "GET", requestProperties);
 
-        byte[] binaryfile = getBinaryFileFromResponse(conn);
-
-        return binaryfile;
+        return getBinaryFileFromResponse(conn);
     }
 
     private byte[] getBinaryFileFromResponse(URLConnection conn) throws IOException {
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
-
-        byte[] binaryfile = null;
-        if ( responseEntity != null ) {
+        try (InputStream responseEntity = new BufferedInputStream(conn.getInputStream())) {
             this.filename = conn.getHeaderField("Filename");
-            binaryfile = IOUtils.toByteArray(responseEntity);
+            return IOUtils.toByteArray(responseEntity);
         }
-        responseEntity.close();
-        return binaryfile;
     }
-
 }

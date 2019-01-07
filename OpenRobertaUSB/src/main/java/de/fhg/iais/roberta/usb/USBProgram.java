@@ -1,14 +1,14 @@
 package de.fhg.iais.roberta.usb;
 
+import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
-import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +25,8 @@ public class USBProgram {
     static {
         ResourceBundle serverProps = ResourceBundle.getBundle("OpenRobertaUSB");
         connectorList = Arrays.asList(
-            new EV3USBConnector(serverProps),
-            new ArduinoUSBConnector(serverProps));
+            new ArduinoUSBConnector(serverProps),
+            new EV3USBConnector(serverProps));
     }
 
     private static final List<IConnector> connectorList;
@@ -54,7 +54,9 @@ public class USBProgram {
             Future<IConnector> robotSearchFuture = executorService.submit(new RobotSearchTask(connectorList, this.controller));
 
             try {
+                LOG.debug("Waiting for robot search results!");
                 IConnector selectedRobot = robotSearchFuture.get();
+                LOG.debug("Result {}", selectedRobot);
                 this.controller.setConnector(selectedRobot);
 
                 Future<Boolean> connectorFuture = executorService.submit(selectedRobot);
