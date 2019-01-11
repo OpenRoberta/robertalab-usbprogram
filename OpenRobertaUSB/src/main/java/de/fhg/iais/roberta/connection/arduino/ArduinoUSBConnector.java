@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,14 +34,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     private final Map<Integer, String> readIdFileErrors = new HashMap<>();
 
-    public ArduinoUSBConnector(ResourceBundle serverProps) {
-        super(serverProps, "Arduino");
+    public ArduinoUSBConnector() {
+        super("Arduino");
 
         loadArduinoIds();
     }
 
     private static String checkIdFileLineFormat(List<String> values) {
-        if (values.size() == 3) {
+        if ( values.size() == 3 ) {
             try {
                 String.valueOf(Integer.valueOf(values.get(0), 16));
             } catch ( NumberFormatException e ) {
@@ -66,7 +65,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     private void loadArduinoIds() {
         File file = new File(ARDUINO_ID_FILE);
-        if (!file.exists()) {
+        if ( !file.exists() ) {
             LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILE);
             file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(ARDUINO_ID_FILE)).getFile());
         }
@@ -74,8 +73,8 @@ public class ArduinoUSBConnector extends AbstractConnector {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             int lineNr = 1;
-            while ((line = br.readLine()) != null) {
-                if (!line.isEmpty() && !line.startsWith("#")) {
+            while ( (line = br.readLine()) != null ) {
+                if ( !line.isEmpty() && !line.startsWith("#") ) {
                     List<String> values = Arrays.asList(line.split(","));
 
                     String error = checkIdFileLineFormat(values);
@@ -134,7 +133,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     Thread.sleep(1000);
                 } else {
                     // if the user disconnected check the arduino type again, it might've changed
-                    if (this.userDisconnect) {
+                    if ( this.userDisconnect ) {
                         findRobot();
                     }
                     this.arduinoCommunicator = new ArduinoCommunicator(this.brickName, this.type);
@@ -241,18 +240,17 @@ public class ArduinoUSBConnector extends AbstractConnector {
     private ArduinoType findArduinoMac() {
         try {
             Runtime rt = Runtime.getRuntime();
-            String commands[] =
-                {
-                    "/bin/sh",
-                    "-c",
-                    "system_profiler SPUSBDataType"
-                        + "    | awk '"
-                        + "      /Product ID:/{p=$3}"
-                        + "      /Vendor ID:/{v=$3}"
-                        + "      /Manufacturer:/{sub(/.*: /,\"\"); m=$0}"
-                        + "      /Location ID:/{sub(/.*: /,\"\"); printf(\"%s:%s %s (%s)\\n\", v, p, $0, m);}"
-                        + "    '"
-                };
+            String commands[] = {
+                "/bin/sh",
+                "-c",
+                "system_profiler SPUSBDataType"
+                    + "    | awk '"
+                    + "      /Product ID:/{p=$3}"
+                    + "      /Vendor ID:/{v=$3}"
+                    + "      /Manufacturer:/{sub(/.*: /,\"\"); m=$0}"
+                    + "      /Location ID:/{sub(/.*: /,\"\"); printf(\"%s:%s %s (%s)\\n\", v, p, $0, m);}"
+                    + "    '"
+            };
             Process pr = rt.exec(commands);
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
@@ -297,10 +295,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
             for ( Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
                 UsbDevice usbDevice = robotEntry.getKey();
 
-                String ArduQueryResult =
-                    JWMI.getWMIValue(
-                        "SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID " + "LIKE '%VID_" + usbDevice.vendorId + "%PID_" + usbDevice.productId + "%'",
-                        "Caption");
+                String
+                    ArduQueryResult =
+                    JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID "
+                        + "LIKE '%VID_"
+                        + usbDevice.vendorId
+                        + "%PID_"
+                        + usbDevice.productId
+                        + "%'", "Caption");
                 Matcher m = Pattern.compile(".*\\((COM\\d+)\\)").matcher(ArduQueryResult);
                 if ( m.find() ) {
                     this.portName = m.group(1);
@@ -331,7 +333,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
                     // see if the ids are supported
                     UsbDevice usbDevice = new UsbDevice(idVendor, idProduct);
-                    if ( supportedRobots.keySet().contains(usbDevice)) {
+                    if ( supportedRobots.keySet().contains(usbDevice) ) {
                         // recover the tty portname of the device
                         // it can be found in the subdirectory with the same name as the device
                         for ( File subdirectory : devicesDirectories.listFiles() ) {
@@ -339,8 +341,10 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 List<File> subsubdirs = Arrays.asList(subdirectory.listFiles());
 
                                 // look for a directory containing tty, in case its only called tty look into it to find the real name
-                                subsubdirs.stream().filter(s -> s.getName().contains("tty")).findFirst().ifPresent(
-                                    f -> this.portName = f.getName().equals("tty") ? f.list()[0] : f.getName());
+                                subsubdirs.stream()
+                                    .filter(s -> s.getName().contains("tty"))
+                                    .findFirst()
+                                    .ifPresent(f -> this.portName = f.getName().equals("tty") ? f.list()[0] : f.getName());
                             }
                         }
                         LOG.info("Found robot: {}:{}, using portname {}", idVendor, idProduct, this.portName);

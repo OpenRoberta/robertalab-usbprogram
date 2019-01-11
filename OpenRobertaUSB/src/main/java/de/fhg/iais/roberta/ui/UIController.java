@@ -4,29 +4,29 @@ import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
+import de.fhg.iais.roberta.usb.RobotSearchTask;
+import de.fhg.iais.roberta.util.ObserverObservable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Observable;
-import java.util.Observer;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
-import static de.fhg.iais.roberta.usb.USBProgram.closeProgram;
-
-public class UIController implements Observer {
+public class UIController extends ObserverObservable {
     private static final Logger LOG = LoggerFactory.getLogger(UIController.class);
 
-    private final Map<String, IConnector> connectorMap = new HashMap<>();
+    private List<IConnector> connectorList = null;
     private IConnector connector = null;
     private final ConnectionView conView;
     private boolean connected;
@@ -45,22 +45,22 @@ public class UIController implements Observer {
         ConnectionViewListener listener = new ConnectionViewListener(this);
         this.conView.setWindowListener(listener);
         this.conView.setConnectActionListener(listener);
+        this.conView.setListSelectionListener(listener);
 
         this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));
         this.serialMonitor.setVisible(false);
     }
 
-    public void setConnectorMap(List<IConnector> connectorList) {
-        LOG.debug("setConnectorMap");
-        for (IConnector conn : connectorList) {
-            this.connectorMap.put(conn.getBrickName(), conn);
-        }
-        this.conView.showRobotList(this.connectorMap);
+    public void setConnectorList(List<IConnector> connectorList) {
+        this.connectorList = new ArrayList<>(connectorList);
+
+        List<String> robotNames = this.connectorList.stream().map(IConnector::getBrickName).collect(Collectors.toList());
+        this.conView.showRobotList(robotNames);
     }
 
-    public IConnector getSelectedRobot() {
-//        LOG.info("getSelectedRobot");
-        return this.connectorMap.get(this.conView.getSelectedRobot());
+    public void setSelectedRobot(int index) {
+        setChanged();
+        notifyObservers(this.connectorList.get(index));
     }
 
     public IConnector getConnector() {
@@ -75,10 +75,10 @@ public class UIController implements Observer {
 
         LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
 
-        if (this.connector instanceof ArduinoUSBConnector) {
+        if ( this.connector instanceof ArduinoUSBConnector ) {
             ArduinoUSBConnector arduinoUSBConnector = (ArduinoUSBConnector) this.connector;
             Map<Integer, String> errors = arduinoUSBConnector.getReadIdFileErrors();
-            if (!errors.isEmpty()) {
+            if ( !errors.isEmpty() ) {
                 StringBuilder sb = new StringBuilder(200);
                 sb.append(System.lineSeparator());
                 for ( Entry<Integer, String> entry : errors.entrySet() ) {
@@ -136,92 +136,90 @@ public class UIController implements Observer {
         LOG.debug("closeApplication");
         if ( this.connected ) {
             String[] buttons = {
-                this.rb.getString("close"),
-                this.rb.getString("cancel")
+                this.rb.getString("close"), this.rb.getString("cancel")
             };
-            int n =
-                ORAPopup.showPopup(
-                    this.conView,
-                    this.rb.getString("attention"),
-                    this.rb.getString("confirmCloseInfo"),
-                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
-                    buttons);
+            int n = ORAPopup.showPopup(
+                this.conView,
+                this.rb.getString("attention"),
+                this.rb.getString("confirmCloseInfo"),
+                new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
+                buttons);
             if ( n == 0 ) {
                 if ( this.connector != null ) {
                     this.connector.close();
-                    try {
-                        Thread.sleep(500); // give NXTUSBBTConnector time to play disconnect melody? :-)
-                    } catch ( InterruptedException e ) {
-                        // ok
-                    }
                 }
-                closeProgram();
+                System.exit(0);
             }
         } else {
-            closeProgram();
+            System.exit(0);
         }
     }
 
     @Override
     public void update(Observable observable, Object o) {
-        State state = (State) o;
-        LOG.debug("update {}", state);
-        switch ( state ) {
-            case WAIT_FOR_CONNECT_BUTTON_PRESS:
-                //this.conView.setNew(this.connector.getBrickName());
-                this.connected = false;
-                this.conView.setWaitForConnect();
+        // TODO improve this
+        if ( observable instanceof RobotSearchTask ) {
+            setConnectorList((List<IConnector>) o);
+        } else if ( observable instanceof IConnector ) {
+            State state = (State) o;
+            LOG.debug("update {}", state);
+            switch ( state ) {
+                case WAIT_FOR_CONNECT_BUTTON_PRESS:
+                    //this.conView.setNew(this.connector.getBrickName());
+                    this.connected = false;
+                    this.conView.setWaitForConnect();
 
-                if (this.connector instanceof ArduinoUSBConnector) {
-                    this.conView.showArduinoMenu();
-                    this.conView.setArduinoMenuText(this.connector.getBrickName());
-                }
+                    if ( this.connector instanceof ArduinoUSBConnector ) {
+                        this.conView.showArduinoMenu();
+                        this.conView.setArduinoMenuText(this.connector.getBrickName());
+                    }
 
-                break;
-            case WAIT_FOR_SERVER:
-                this.conView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
-                this.conView.setWaitForServer();
-                break;
-            case RECONNECT:
-                this.conView.setConnectButtonText(this.rb.getString("disconnect"));
-            case WAIT_FOR_CMD:
-                this.connected = true;
-                this.conView.setNew(this.rb.getString("name") + ' ' + this.connector.getBrickName());
-                this.conView.setWaitForCmd();
-                break;
-            case DISCOVER:
-                this.connected = false;
-                this.conView.setDiscover();
-                break;
-            case WAIT_UPLOAD:
-                stopSerialLogging();
-                break;
-            case WAIT_EXECUTION:
-                this.conView.setWaitExecution();
-                if (this.serialMonitor.isVisible()) {
-                    restartSerialLogging();
-                }
-                break;
-            case UPDATE_SUCCESS:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("restartInfo"), null);
-                break;
-            case UPDATE_FAIL:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("updateFail"), null);
-                break;
-            case ERROR_HTTP:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpErrorInfo"), null);
-                break;
-            case ERROR_DOWNLOAD:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("downloadFail"), null);
-                break;
-            case ERROR_BRICK:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpBrickInfo"), null);
-                break;
-            case TOKEN_TIMEOUT:
-                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("tokenTimeout"), null);
-                break;
-            default:
-                break;
+                    break;
+                case WAIT_FOR_SERVER:
+                    this.conView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
+                    this.conView.setWaitForServer();
+                    break;
+                case RECONNECT:
+                    this.conView.setConnectButtonText(this.rb.getString("disconnect"));
+                case WAIT_FOR_CMD:
+                    this.connected = true;
+                    this.conView.setNew(this.rb.getString("name") + ' ' + this.connector.getBrickName());
+                    this.conView.setWaitForCmd();
+                    break;
+                case DISCOVER:
+                    this.connected = false;
+                    this.conView.setDiscover();
+                    break;
+                case WAIT_UPLOAD:
+                    stopSerialLogging();
+                    break;
+                case WAIT_EXECUTION:
+                    this.conView.setWaitExecution();
+                    if ( this.serialMonitor.isVisible() ) {
+                        restartSerialLogging();
+                    }
+                    break;
+                case UPDATE_SUCCESS:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("restartInfo"), null);
+                    break;
+                case UPDATE_FAIL:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("updateFail"), null);
+                    break;
+                case ERROR_HTTP:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpErrorInfo"), null);
+                    break;
+                case ERROR_DOWNLOAD:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("downloadFail"), null);
+                    break;
+                case ERROR_BRICK:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpBrickInfo"), null);
+                    break;
+                case TOKEN_TIMEOUT:
+                    ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("tokenTimeout"), null);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -231,18 +229,12 @@ public class UIController implements Observer {
             this.conView,
             this.rb.getString("about"),
             this.rb.getString("aboutInfo"),
-            new ImageIcon(
-                new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif")))
-                    .getImage()
-                    .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+            new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
+                .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }
 
     public void showConfigErrorPopup(String errors) {
-        ORAPopup.showPopup(
-            this.conView,
-            this.rb.getString("attention"),
-            this.rb.getString("errorReadConfig") + errors,
-            null);
+        ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + errors, null);
     }
 
     public void showSerialMonitor() {
@@ -258,11 +250,9 @@ public class UIController implements Observer {
         stopSerialLogging();
 
         // TODO improve
-        if (this.connector instanceof ArduinoUSBConnector) {
-            this.serialLoggingFuture = this.executorService.submit(
-                new SerialLoggingTask(this,
-                    ((ArduinoUSBConnector) this.connector).getPort(),
-                    this.serialMonitor.getSerialRate()));
+        if ( this.connector instanceof ArduinoUSBConnector ) {
+            this.serialLoggingFuture =
+                this.executorService.submit(new SerialLoggingTask(this, ((ArduinoUSBConnector) this.connector).getPort(), this.serialMonitor.getSerialRate()));
         }
     }
 
@@ -276,7 +266,7 @@ public class UIController implements Observer {
 
     public void stopSerialLogging() {
         LOG.debug("stopSerialLogging");
-        if (this.serialLoggingFuture != null) {
+        if ( this.serialLoggingFuture != null ) {
             this.serialLoggingFuture.cancel(true);
         }
     }

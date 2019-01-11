@@ -1,42 +1,36 @@
 package de.fhg.iais.roberta.connection.arduino;
 
-import de.fhg.iais.roberta.util.Utils;
+import de.fhg.iais.roberta.util.PropertyHelper;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Properties;
 
 class ArduinoCommunicator {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoCommunicator.class);
 
-    private final Properties commProperties;
     private String avrPath = ""; //path for avrdude bin
     private String avrConfPath = ""; //path for the .conf file
     private final String brickName;
     private final ArduinoType type;
 
     ArduinoCommunicator(String brickName, ArduinoType type) {
-        this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
         this.brickName = brickName;
         this.type = type;
     }
 
     private void setParameters() {
         if ( SystemUtils.IS_OS_WINDOWS ) {
-            this.avrPath = this.commProperties.getProperty("WinPath");
-            this.avrConfPath = this.commProperties.getProperty("WinConfPath");
-
+            this.avrPath = PropertyHelper.getInstance().getProperty("WinPath");
+            this.avrConfPath = PropertyHelper.getInstance().getProperty("WinConfPath");
         } else if ( SystemUtils.IS_OS_LINUX ) {
-            this.avrPath = this.commProperties.getProperty("LinPath");
-            this.avrConfPath = this.commProperties.getProperty("LinConfPath");
-
+            this.avrPath = PropertyHelper.getInstance().getProperty("LinPath");
+            this.avrConfPath = PropertyHelper.getInstance().getProperty("LinConfPath");
         } else {
-            this.avrPath = this.commProperties.getProperty("OsXPath");
-            this.avrConfPath = this.commProperties.getProperty("MacConfPath");
-
+            this.avrPath = PropertyHelper.getInstance().getProperty("OsXPath");
+            this.avrConfPath = PropertyHelper.getInstance().getProperty("MacConfPath");
         }
     }
 
@@ -78,7 +72,9 @@ class ArduinoCommunicator {
             }
 
             LOG.info("Starting to upload program {} to {}{}", filePath, portPath, portName);
-            ProcessBuilder processBuilder = new ProcessBuilder(this.avrPath,
+            ProcessBuilder
+                processBuilder =
+                new ProcessBuilder(this.avrPath,
                     "-v",
                     "-D",
                     pArg,
@@ -88,13 +84,13 @@ class ArduinoCommunicator {
                     "-P" + portPath + portName,
                     eArg);
 
-//            processBuilder.redirectInput(Redirect.INHERIT);
-//            processBuilder.redirectOutput(Redirect.INHERIT);
-//            processBuilder.redirectError(Redirect.INHERIT);
+            //            processBuilder.redirectInput(Redirect.INHERIT);
+            //            processBuilder.redirectOutput(Redirect.INHERIT);
+            //            processBuilder.redirectError(Redirect.INHERIT);
 
             Process p = processBuilder.start();
             int eCode = p.waitFor();
-            if (eCode == 0) {
+            if ( eCode == 0 ) {
                 LOG.info("Program uploaded successfully");
             } else {
                 LOG.info("Program was unable to be uploaded: {}", eCode);

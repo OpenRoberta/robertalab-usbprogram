@@ -1,16 +1,39 @@
 package de.fhg.iais.roberta.ui;
 
-import de.fhg.iais.roberta.connection.IConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.WindowConstants;
+import javax.swing.event.ListSelectionListener;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.net.URL;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ConnectionView extends JFrame {
@@ -312,6 +335,10 @@ public class ConnectionView extends JFrame {
         this.addWindowListener(windowListener);
     }
 
+    public void setListSelectionListener(ListSelectionListener listener) {
+        this.listRobots.addListSelectionListener(listener);
+    }
+
     public void setWaitForConnect() {
         this.lblRobot.setIcon(this.icoRobotDiscovered);
         this.butConnect.setEnabled(true);
@@ -363,10 +390,10 @@ public class ConnectionView extends JFrame {
         this.lblMainGif.setIcon(this.gifServer);
     }
 
-    public void showRobotList(Map<String, IConnector> connectorMap) {
+    public void showRobotList(List<String> robotNames) {
         this.lblSelection.setVisible(true);
         this.listRobots.setVisible(true);
-        this.listRobots.setListData(connectorMap.keySet().toArray(new String[0]));
+        this.listRobots.setListData(robotNames.toArray(new String[0]));
     }
 
     public void hideRobotList() {
@@ -384,10 +411,6 @@ public class ConnectionView extends JFrame {
 
     public void setArduinoMenuText(String text) {
         this.menuArduino.setText(text);
-    }
-
-    public String getSelectedRobot() {
-        return this.listRobots.getSelectedValue();
     }
 
     public void showAdvancedOptions() {

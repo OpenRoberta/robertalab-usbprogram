@@ -1,12 +1,11 @@
 package de.fhg.iais.roberta.connection;
 
+import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.Observable;
-import java.util.ResourceBundle;
 
 public abstract class AbstractConnector extends Observable implements IConnector {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
@@ -22,10 +21,9 @@ public abstract class AbstractConnector extends Observable implements IConnector
     protected String brickName;
     protected boolean userDisconnect = false;
 
-    protected AbstractConnector(ResourceBundle serverProps, String brickName) {
-        Objects.requireNonNull(serverProps);
-        String serverIp = serverProps.getString("serverIp");
-        String serverPort = serverProps.getString("serverPort");
+    protected AbstractConnector(String brickName) {
+        String serverIp = PropertyHelper.getInstance().getProperty("serverIp");
+        String serverPort = PropertyHelper.getInstance().getProperty("serverPort");
         this.serverAddress = serverIp + ':' + serverPort;
         this.brickName = brickName;
     }
@@ -35,11 +33,10 @@ public abstract class AbstractConnector extends Observable implements IConnector
         LOG.info("Starting {} connector thread.", this.brickName);
         setupServerCommunicator();
         LOG.info("Server address {}", this.serverAddress);
-        while(!Thread.currentThread().isInterrupted()) {
+        while ( !Thread.currentThread().isInterrupted() ) {
             try {
-//                LOG.debug("{} is running! ", Thread.currentThread().getName());
                 runLoopBody();
-            } catch (InterruptedException e) {
+            } catch ( InterruptedException e ) {
                 reset(null);
                 LOG.info("Stopping {} connector thread.", this.brickName);
                 Thread.currentThread().interrupt();
@@ -91,13 +88,13 @@ public abstract class AbstractConnector extends Observable implements IConnector
 
     @Override
     public void updateCustomServerAddress(String customServerAddress) {
-        this.serverCommunicator.updateCustomServerAddress(customServerAddress);
+        this.serverCommunicator.setServerAddress(customServerAddress);
         LOG.info("Now using custom address {}", customServerAddress);
     }
 
     @Override
     public void resetToDefaultServerAddress() {
-        this.serverCommunicator.updateCustomServerAddress(this.serverAddress);
+        this.serverCommunicator.setServerAddress(this.serverAddress);
         LOG.info("Now using default address {}", this.serverAddress);
     }
 

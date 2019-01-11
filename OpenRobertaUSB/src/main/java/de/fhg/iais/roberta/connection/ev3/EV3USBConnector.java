@@ -4,11 +4,11 @@ import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
 import de.fhg.iais.roberta.util.ORATokenGenerator;
+import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ResourceBundle;
 
 /**
  * Intended to be used as Singleton(!). This class handles two connections:
@@ -21,29 +21,22 @@ import java.util.ResourceBundle;
  * {@link IConnector}
  */
 public class EV3USBConnector extends AbstractConnector {
-    private static final String brickIp = "10.0.1.1";
+    private static final String brickIp = PropertyHelper.getInstance().getProperty("brickIp");
 
     private final EV3Communicator ev3comm;
 
-    private final String[] fwfiles =
-        {
-            "runtime",
-            "jsonlib",
-            "websocketlib",
-            "ev3menu"
-        };
+    private final String[] fwfiles = {
+        "runtime", "jsonlib", "websocketlib", "ev3menu"
+    };
 
     /**
      * Instantiate the connector with specific properties from the file or use default options defined in this class.
      * Set up a communicator to the EV3 and to the Open Roberta server.
-     *
-     * @param serverProps the server properties
      */
-    public EV3USBConnector(ResourceBundle serverProps) {
-        super(serverProps, "ev3");
+    public EV3USBConnector() {
+        super("ev3");
 
         LOG.info("Robot ip {}", brickIp);
-
         this.ev3comm = new EV3Communicator(brickIp);
     }
 
@@ -245,7 +238,7 @@ public class EV3USBConnector extends AbstractConnector {
     @Override
     public String getBrickName() {
         // TODO whats in brickData?
-        if ( this.brickData != null) {
+        if ( this.brickData != null ) {
             String brickname = this.brickData.getString("brickname");
             if ( brickname != null ) {
                 this.brickName = brickname;

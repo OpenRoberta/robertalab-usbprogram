@@ -20,36 +20,29 @@ import java.util.Map.Entry;
 /**
  * The server communicator runs the server protocol on behalf of the actual robot hardware.
  * This class provides access to push requests, downloads the user program and download system libraries for
- * the upload funtion.
+ * the upload function.
  *
  * @author dpyka
  */
 public class ServerCommunicator {
 
+    private static final String PUSH_ADDRESS = "/rest/pushcmd";
+    private static final String DOWNLOAD_ADDRESS = "/rest/download";
+    private static final String UPDATE_ADDRESS = "/rest/download";
     private static final int CONNECT_TIMEOUT = 5000;
 
-    private String serverPushAddress = null;
-    private String serverDownloadAddress = null;
-    private String serverUpdateAddress = null;
-
+    private String serverAddress;
     private String filename = "";
 
     /**
      * @param serverAddress either the default address taken from the properties file or the custom address entered in the gui.
      */
     public ServerCommunicator(String serverAddress) {
-        updateCustomServerAddress(serverAddress);
+        this.serverAddress = serverAddress;
     }
 
-    /**
-     * Update the server address if the user wants to use an own installation of open roberta with a different IP address.
-     *
-     * @param customServerAddress for example localhost:1999 or 192.168.178.10:1337
-     */
-    public void updateCustomServerAddress(String customServerAddress) {
-        this.serverPushAddress = customServerAddress + "/rest/pushcmd";
-        this.serverDownloadAddress = customServerAddress + "/rest/download";
-        this.serverUpdateAddress = customServerAddress + "/rest/update";
+    public void setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
     }
 
     /**
@@ -71,7 +64,7 @@ public class ServerCommunicator {
         Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/json");
 
-        URLConnection conn = openURLConnection(this.serverPushAddress, "POST", requestProperties);
+        URLConnection conn = openURLConnection(this.serverAddress + PUSH_ADDRESS, "POST", requestProperties);
         sendServerRequest(requestContent, conn);
         String responseText = getServerResponse(conn);
 
@@ -146,7 +139,7 @@ public class ServerCommunicator {
         Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/octet-stream");
 
-        URLConnection conn = openURLConnection(this.serverDownloadAddress, "POST", requestProperties);
+        URLConnection conn = openURLConnection(this.serverAddress + DOWNLOAD_ADDRESS, "POST", requestProperties);
         sendServerRequest(requestContent, conn);
 
         return getBinaryFileFromResponse(conn);
@@ -163,7 +156,7 @@ public class ServerCommunicator {
         Map<String, String> requestProperties = new HashMap<>();
         requestProperties.put("Accept", "application/octet-stream");
 
-        URLConnection conn = openURLConnection(this.serverUpdateAddress + '/' + fwFile, "GET", requestProperties);
+        URLConnection conn = openURLConnection(this.serverAddress + UPDATE_ADDRESS + '/' + fwFile, "GET", requestProperties);
 
         return getBinaryFileFromResponse(conn);
     }

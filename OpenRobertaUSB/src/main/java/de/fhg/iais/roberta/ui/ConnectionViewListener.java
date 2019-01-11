@@ -5,12 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.AbstractButton;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class ConnectionViewListener extends WindowAdapter implements ActionListener {
+public class ConnectionViewListener extends WindowAdapter implements ActionListener, ListSelectionListener {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionViewListener.class);
 
     private final UIController uiController;
@@ -58,5 +60,10 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
     public void windowClosing(WindowEvent e) {
         LOG.debug("User close");
         this.uiController.closeApplication();
+    }
+
+    @Override
+    public void valueChanged(ListSelectionEvent listSelectionEvent) {
+        this.uiController.setSelectedRobot(listSelectionEvent.getFirstIndex());
     }
 }

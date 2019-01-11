@@ -10,7 +10,25 @@ public class JWMI {
 
     private static final String CRLF = "\r\n";
 
-    public static String getVBScript(String wmiQueryStr, String wmiCommaSeparatedFieldName) {
+    public static String getWMIValue(String wmiQueryStr, String wmiCommaSeparatedFieldName) throws Exception {
+        String vbScript = getVBScript(wmiQueryStr, wmiCommaSeparatedFieldName);
+        String tmpDirName = getEnvVar("TEMP").trim();
+        String tmpFileName = tmpDirName + File.separator + "jwmi.vbs";
+        writeStrToFile(tmpFileName, vbScript);
+        String output =
+            execute(
+                new String[] {
+                    "cmd.exe",
+                    "/C",
+                    "cscript.exe",
+                    tmpFileName
+                });
+        new File(tmpFileName).delete();
+
+        return output.trim();
+    }
+
+    private static String getVBScript(String wmiQueryStr, String wmiCommaSeparatedFieldName) {
         String vbs = "Dim oWMI : Set oWMI = GetObject(\"winmgmts:\")" + CRLF;
         vbs += "Dim classComponent : Set classComponent = oWMI.ExecQuery(\"" + wmiQueryStr + "\")" + CRLF;
         vbs += "Dim obj, strData" + CRLF;
@@ -46,24 +64,6 @@ public class JWMI {
         output.flush();
         output.close();
         output = null;
-    }
-
-    public static String getWMIValue(String wmiQueryStr, String wmiCommaSeparatedFieldName) throws Exception {
-        String vbScript = getVBScript(wmiQueryStr, wmiCommaSeparatedFieldName);
-        String tmpDirName = getEnvVar("TEMP").trim();
-        String tmpFileName = tmpDirName + File.separator + "jwmi.vbs";
-        writeStrToFile(tmpFileName, vbScript);
-        String output =
-            execute(
-                new String[] {
-                    "cmd.exe",
-                    "/C",
-                    "cscript.exe",
-                    tmpFileName
-                });
-        new File(tmpFileName).delete();
-
-        return output.trim();
     }
 
     private static String execute(String[] cmdArray) throws Exception {
