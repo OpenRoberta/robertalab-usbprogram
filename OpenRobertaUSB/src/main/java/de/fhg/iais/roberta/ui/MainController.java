@@ -2,13 +2,11 @@ package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
-import de.fhg.iais.roberta.connection.SerialLoggingTask;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ImageIcon;
-import javax.swing.SwingUtilities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,27 +14,25 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Observable;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-public class MainController extends Observable {
+public class MainController extends Observable implements IController {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
-    private List<IConnector> connectorList = null;
-    private IConnector connector = null;
-    private final MainView mainView;
-    private boolean connected;
+    // View related
     private final ResourceBundle rb;
+    private final MainView mainView;
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final SerialMonitorView serialMonitorView;
-    private Future<Void> serialLoggingFuture = null;
+    private List<IConnector> connectorList = null;
 
-    private final RobotSearchObserver robotSearchObserver;
+    private boolean connected;
+
     private final ConnectorObserver connectorObserver;
-    private final SerialLoggingObserver serialLoggingObserver;
+
+    private IConnector connector = null;
+
+    // Child controllers of the main controller, this includes other windows/JFrames that are launched from the main controller
+    private final SerialMonitorController serialMonitorController;
 
     public MainController(ResourceBundle rb) {
         this.mainView = new MainView(rb, new MainViewListener(this));
@@ -44,16 +40,9 @@ public class MainController extends Observable {
         this.rb = rb;
         this.connected = false;
 
-        this.serialMonitorView = new SerialMonitorView(this.rb, new SerialMonitorListener(this));
-        this.serialMonitorView.setVisible(false);
-
-        this.robotSearchObserver = new RobotSearchObserver(this);
         this.connectorObserver = new ConnectorObserver(this);
-        this.serialLoggingObserver = new SerialLoggingObserver(this);
-    }
 
-    public RobotSearchObserver getRobotSearchObserver() {
-        return this.robotSearchObserver;
+        this.serialMonitorController = new SerialMonitorController(rb);
     }
 
     void setConnectorList(List<IConnector> connectorList) {
@@ -72,7 +61,7 @@ public class MainController extends Observable {
         return this.connector;
     }
 
-    void setState(State state) {
+    public void setState(State state) {
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 this.connected = false;
@@ -98,14 +87,8 @@ public class MainController extends Observable {
             case DISCOVER:
                 this.setDiscover();
                 break;
-            case WAIT_UPLOAD:
-                this.stopSerialLogging();
-                break;
             case WAIT_EXECUTION:
                 this.mainView.setWaitExecution();
-                if ( this.serialMonitorView.isVisible() ) {
-                    this.restartSerialLogging();
-                }
                 break;
             case UPDATE_SUCCESS:
                 this.showAttentionPopup("restartInfo");
@@ -130,13 +113,14 @@ public class MainController extends Observable {
         }
     }
 
-    public void setConnector(IConnector usbCon) {
+    public void setConnector(IConnector connector) {
         LOG.debug("setConnector");
-        this.mainView.hideRobotList();
-        this.connector = usbCon;
+        this.connector = connector;
         ((Observable) this.connector).addObserver(this.connectorObserver);
 
-        LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
+        this.mainView.hideRobotList();
+
+        LOG.info("GUI setup done. Using {}", connector.getClass().getSimpleName());
 
         if ( this.connector instanceof ArduinoUSBConnector ) {
             ArduinoUSBConnector arduinoUSBConnector = (ArduinoUSBConnector) this.connector;
@@ -151,6 +135,8 @@ public class MainController extends Observable {
                 showConfigErrorPopup(sb.toString());
             }
         }
+
+        this.serialMonitorController.setConnector(connector);
     }
 
     private void showConfigErrorPopup(String errors) {
@@ -214,41 +200,6 @@ public class MainController extends Observable {
         }
     }
 
-
-    void showSerialMonitor() {
-        LOG.debug("showSerialMonitor");
-
-        this.serialMonitorView.setVisible(true);
-
-        restartSerialLogging();
-    }
-
-    void restartSerialLogging() {
-        LOG.debug("restartSerialLogging");
-        stopSerialLogging();
-
-        // TODO improve
-        if ( this.connector instanceof ArduinoUSBConnector ) {
-            this.serialLoggingFuture =
-                this.executorService.submit(new SerialLoggingTask(this.serialLoggingObserver, ((ArduinoUSBConnector) this.connector).getPort(), this.serialMonitorView
-                    .getSerialRate()));
-        }
-    }
-
-    void appendSerial(byte[] readBuffer) {
-        SwingUtilities.invokeLater(() -> this.serialMonitorView.appendText(readBuffer));
-    }
-
-    void clearSerialLog() {
-        this.serialMonitorView.clearText();
-    }
-
-    void stopSerialLogging() {
-        if ( this.serialLoggingFuture != null ) {
-            this.serialLoggingFuture.cancel(true);
-        }
-    }
-
     private void showAttentionPopup(String key) {
         ORAPopup.showPopup(this.mainView, this.rb.getString("attention"),
             this.rb.getString(key), null);
@@ -261,5 +212,9 @@ public class MainController extends Observable {
             this.rb.getString("aboutInfo"),
             new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
                 .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+    }
+
+    void showSerialMonitor() {
+        this.serialMonitorController.showSerialMonitor();
     }
 }

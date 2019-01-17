@@ -4,14 +4,14 @@ import java.util.Observable;
 import java.util.Observer;
 
 class SerialLoggingObserver implements Observer {
-    private final MainController mainController;
+    private final SerialMonitorController serialMonitorController;
 
-    SerialLoggingObserver(MainController mainController) {
-        this.mainController = mainController;
+    SerialLoggingObserver(SerialMonitorController serialMonitorController) {
+        this.serialMonitorController = serialMonitorController;
     }
 
     @Override
     public void update(Observable observable, Object o) {
-        this.mainController.appendSerial((byte[]) o);
+        this.serialMonitorController.appendSerial((byte[]) o);
     }
 }

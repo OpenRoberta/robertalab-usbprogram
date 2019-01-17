@@ -6,15 +6,15 @@ import java.util.Observable;
 import java.util.Observer;
 
 class ConnectorObserver implements Observer {
-    private final MainController mainController;
+    private final IController controller;
 
-    ConnectorObserver(MainController mainController) {
-        this.mainController = mainController;
+    ConnectorObserver(IController controller) {
+        this.controller = controller;
     }
 
     @Override
     public void update(Observable observable, Object o) {
         State state = (State) o;
-        this.mainController.setState(state);
+        this.controller.setState(state);
     }
 }

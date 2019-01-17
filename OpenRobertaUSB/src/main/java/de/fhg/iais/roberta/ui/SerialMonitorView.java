@@ -1,6 +1,14 @@
 package de.fhg.iais.roberta.ui;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -18,7 +26,7 @@ public class SerialMonitorView extends JFrame {
         new Integer[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200 });
     private final JButton clearButton = new JButton();
 
-    public SerialMonitorView(ResourceBundle messages, SerialMonitorListener listener) {
+    public SerialMonitorView(ResourceBundle messages, SerialMonitorViewListener listener) {
         // General
         this.setSize(700, 500);
         this.setLocationRelativeTo(null);

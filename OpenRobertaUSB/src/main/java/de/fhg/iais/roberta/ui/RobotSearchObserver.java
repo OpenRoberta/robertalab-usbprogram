@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-class RobotSearchObserver implements Observer {
+public class RobotSearchObserver implements Observer {
     private final MainController mainController;
 
-    RobotSearchObserver(MainController mainController) {
+    public RobotSearchObserver(MainController mainController) {
         this.mainController = mainController;
     }
 
