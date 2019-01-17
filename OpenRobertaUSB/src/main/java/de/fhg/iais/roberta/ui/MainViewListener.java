@@ -12,58 +12,58 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class ConnectionViewListener extends WindowAdapter implements ActionListener, ListSelectionListener {
-    private static final Logger LOG = LoggerFactory.getLogger(ConnectionViewListener.class);
+public class MainViewListener extends WindowAdapter implements ActionListener, ListSelectionListener {
+    private static final Logger LOG = LoggerFactory.getLogger(MainViewListener.class);
 
-    private final UIController uiController;
+    private final MainController mainController;
 
-    public ConnectionViewListener(UIController uiController) {
-        this.uiController = uiController;
+    MainViewListener(MainController mainController) {
+        this.mainController = mainController;
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        AbstractButton button = (AbstractButton) e.getSource();
+    public void actionPerformed(ActionEvent actionEvent) {
+        AbstractButton button = (AbstractButton) actionEvent.getSource();
         if ( button.getActionCommand().equals("close") ) {
             LOG.debug("User close");
-            this.uiController.closeApplication();
+            this.mainController.closeApplication();
         } else if ( button.getActionCommand().equals("about") ) {
             LOG.debug("User about");
-            this.uiController.showAboutPopup();
+            this.mainController.showAboutPopup();
         } else if ( button.getActionCommand().equals("customaddress") ) {
             LOG.debug("User custom address");
-            this.uiController.showAdvancedOptions();
+            this.mainController.showAdvancedOptions();
         } else if ( button.getActionCommand().equals("scan") ) {
             LOG.debug("User scan");
             USBProgram.stopConnector();
-            this.uiController.setDiscover();
+            this.mainController.setDiscover();
         } else if ( button.getActionCommand().equals("serial")) {
             LOG.debug("User serial");
-            this.uiController.showSerialMonitor();
+            this.mainController.showSerialMonitor();
         } else {
             if ( button.isSelected() ) {
                 LOG.debug("User connect");
-                if ( this.uiController.getConnector() != null ) { //TODO
-                    this.uiController.checkForValidCustomServerAddressAndUpdate();
-                    this.uiController.getConnector().userPressConnectButton();
+                if ( this.mainController.getConnector() != null ) { //TODO
+                    this.mainController.checkForValidCustomServerAddressAndUpdate();
+                    this.mainController.getConnector().userPressConnectButton();
                 }
             } else {
                 LOG.debug("User disconnect");
-                if ( this.uiController.getConnector() != null ) {
-                    this.uiController.getConnector().userPressDisconnectButton();
+                if ( this.mainController.getConnector() != null ) {
+                    this.mainController.getConnector().userPressDisconnectButton();
                 }
             }
         }
     }
 
     @Override
-    public void windowClosing(WindowEvent e) {
+    public void windowClosing(WindowEvent windowEvent) {
         LOG.debug("User close");
-        this.uiController.closeApplication();
+        this.mainController.closeApplication();
     }
 
     @Override
     public void valueChanged(ListSelectionEvent listSelectionEvent) {
-        this.uiController.setSelectedRobot(listSelectionEvent.getFirstIndex());
+        this.mainController.setSelectedRobot(listSelectionEvent.getFirstIndex());
     }
 }

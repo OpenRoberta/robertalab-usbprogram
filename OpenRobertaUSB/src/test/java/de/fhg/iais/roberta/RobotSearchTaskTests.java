@@ -2,7 +2,6 @@ package de.fhg.iais.roberta;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.usb.RobotSearchTask;
-import de.fhg.iais.roberta.util.ObserverObservable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,11 +41,8 @@ class RobotSearchTaskTests {
         connectorList.add(new TestNotFoundConnector());
         connectorList.add(new TestFoundConnector());
 
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, new ObserverObservable() {
-            @Override
-            public void update(Observable observable, Object o) {
-            }
-        }));
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, (observable, o) -> {
+        }, new Observable()));
 
         IConnector connector = null;
         try {
@@ -64,19 +61,8 @@ class RobotSearchTaskTests {
         connectorList.add(new TestFoundConnector());
         connectorList.add(new TestFoundConnector());
 
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, new ObserverObservable() {
-            @Override
-            public void update(Observable observable, Object o) {
-                if ( observable instanceof RobotSearchTask ) {
-                    if ( o instanceof List ) {
-                        List<?> connectors = (List<?>) o;
-
-                        setChanged();
-                        notifyObservers(connectors.get(1));
-                    }
-                }
-            }
-        }));
+        TestObserverObservable testObserverObservable = new TestObserverObservable();
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, testObserverObservable, testObserverObservable));
 
         IConnector connector = null;
         try {
@@ -95,11 +81,8 @@ class RobotSearchTaskTests {
         connectorList.add(new TestNotFoundConnector());
         connectorList.add(new TestNotFoundConnector());
 
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, new ObserverObservable() {
-            @Override
-            public void update(Observable observable, Object o) {
-            }
-        }));
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, (observable, o) -> {
+        }, new Observable()));
 
         IConnector connector = null;
         try {
@@ -109,6 +92,20 @@ class RobotSearchTaskTests {
         }
 
         assertThat(connector, is(nullValue()));
+    }
+
+    private static class TestObserverObservable extends Observable implements Observer {
+        @Override
+        public void update(Observable observable, Object o) {
+            if ( observable instanceof RobotSearchTask ) {
+                if ( o instanceof List ) {
+                    List<?> connectors = (List<?>) o;
+
+                    setChanged();
+                    notifyObservers(connectors.get(1));
+                }
+            }
+        }
     }
 
     private static class TestFoundConnector extends TestConnector {

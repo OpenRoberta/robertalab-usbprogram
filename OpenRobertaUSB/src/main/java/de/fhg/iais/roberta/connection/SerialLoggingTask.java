@@ -1,22 +1,22 @@
 package de.fhg.iais.roberta.connection;
 
 import com.fazecast.jSerialComm.SerialPort;
-import de.fhg.iais.roberta.ui.UIController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.Callable;
 
-public class SerialLoggingTask implements Callable<Void> {
+public class SerialLoggingTask extends Observable implements Callable<Void> {
     private static final Logger LOG = LoggerFactory.getLogger(SerialLoggingTask.class);
 
-    private UIController uiController;
-    private String port;
-    private int serialRate;
+    private final String port;
+    private final int serialRate;
 
-    public SerialLoggingTask(UIController uiController, String port, int serialRate) {
-        this.uiController = uiController;
+    public SerialLoggingTask(Observer observer, String port, int serialRate) {
+        addObserver(observer);
         this.port = port;
         this.serialRate = serialRate;
     }
@@ -37,7 +37,8 @@ public class SerialLoggingTask implements Callable<Void> {
 
                 byte[] readBuffer = new byte[comPort.bytesAvailable()];
                 comPort.readBytes(readBuffer, readBuffer.length);
-                this.uiController.appendSerial(readBuffer);
+                setChanged();
+                notifyObservers(readBuffer);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

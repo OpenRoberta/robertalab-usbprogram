@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.util.ObserverObservable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,19 +9,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.Callable;
 
-public class RobotSearchTask extends ObserverObservable implements Callable<IConnector> {
+public class RobotSearchTask extends Observable implements Callable<IConnector>, Observer {
     private static final Logger LOG = LoggerFactory.getLogger(RobotSearchTask.class);
 
     private final List<IConnector> connectorList;
     private IConnector selectedRobot = null;
 
-    public RobotSearchTask(List<IConnector> connectorList, ObserverObservable observerObservable) {
+    public RobotSearchTask(List<IConnector> connectorList, Observer observer, Observable observable) {
         this.connectorList = Collections.unmodifiableList(connectorList);
 
-        this.addObserver(observerObservable);
-        observerObservable.addObserver(this);
+        this.addObserver(observer);
+        observable.addObserver(this);
     }
 
     private boolean updateFoundRobots(Collection<IConnector> foundRobots) {

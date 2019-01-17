@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class ConnectionView extends JFrame {
-    private static final Logger LOG = LoggerFactory.getLogger(ConnectionView.class);
+public class MainView extends JFrame {
+    private static final Logger LOG = LoggerFactory.getLogger(MainView.class);
 
     private static final long serialVersionUID = 1L;
     private static final int WIDTH = 310;
@@ -136,12 +136,16 @@ public class ConnectionView extends JFrame {
 
     private boolean toggle = true;
 
-    public ConnectionView(ResourceBundle messages) {
+    public MainView(ResourceBundle messages, MainViewListener listener) {
         this.messages = messages;
 
         this.createIcons();
         this.initGUI();
         this.setDiscover();
+
+        this.setWindowListener(listener);
+        this.setListSelectionListener(listener);
+        this.setActionListener(listener);
     }
 
     private void initGeneralGUI() {
@@ -321,7 +325,7 @@ public class ConnectionView extends JFrame {
         this.pnlCustomAddress.setVisible(true);
     }
 
-    public void setConnectActionListener(ActionListener listener) {
+    private void setActionListener(ActionListener listener) {
         this.menuItemClose.addActionListener(listener);
         this.menuItemAbout.addActionListener(listener);
         this.menuItemSerial.addActionListener(listener);
@@ -331,11 +335,11 @@ public class ConnectionView extends JFrame {
         this.checkCustom.addActionListener(listener);
     }
 
-    public void setWindowListener(WindowListener windowListener) {
+    private void setWindowListener(WindowListener windowListener) {
         this.addWindowListener(windowListener);
     }
 
-    public void setListSelectionListener(ListSelectionListener listener) {
+    private void setListSelectionListener(ListSelectionListener listener) {
         this.listRobots.addListSelectionListener(listener);
     }
 

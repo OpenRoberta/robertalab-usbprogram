@@ -7,7 +7,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ResourceBundle;
 
-public class SerialMonitor extends JFrame {
+public class SerialMonitorView extends JFrame {
     private final JTextArea textArea = new JTextArea();
     private final JScrollPane scrollPane = new JScrollPane(this.textArea,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -18,7 +18,7 @@ public class SerialMonitor extends JFrame {
         new Integer[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200 });
     private final JButton clearButton = new JButton();
 
-    public SerialMonitor(ResourceBundle messages, SerialMonitorListener listener) {
+    public SerialMonitorView(ResourceBundle messages, SerialMonitorListener listener) {
         // General
         this.setSize(700, 500);
         this.setLocationRelativeTo(null);

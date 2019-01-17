@@ -3,12 +3,15 @@ package de.fhg.iais.roberta.usb;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
-import de.fhg.iais.roberta.ui.ConnectionView;
-import de.fhg.iais.roberta.ui.UIController;
+import de.fhg.iais.roberta.ui.MainController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,20 +25,21 @@ public class USBProgram {
     private static final List<IConnector> connectorList = Collections.unmodifiableList(Arrays.asList(new ArduinoUSBConnector(), new EV3USBConnector()));
 
     private static boolean connectorShouldStop = false;
-    private final UIController controller;
+    private final MainController controller;
 
     public USBProgram() {
         ResourceBundle messages = ResourceBundle.getBundle(MESSAGES_BUNDLE, Locale.getDefault());
         LOG.info("Using locale {}", (messages.getLocale().getLanguage().isEmpty()) ? "default en" : messages.getLocale());
-        ConnectionView view = new ConnectionView(messages);
-        this.controller = new UIController(view, messages);
+        this.controller = new MainController(messages);
     }
 
     public void run() {
         LOG.debug("Entering run method!");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         while ( !Thread.currentThread().isInterrupted() ) {
-            Future<IConnector> robotSearchFuture = executorService.submit(new RobotSearchTask(connectorList, this.controller));
+            Future<IConnector>
+                robotSearchFuture =
+                executorService.submit(new RobotSearchTask(connectorList, this.controller.getRobotSearchObserver(), this.controller));
 
             try {
                 LOG.debug("Waiting for robot search results!");
