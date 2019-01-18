@@ -10,9 +10,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-public class RobotSearchTask implements Callable<IConnector>, IOraListenable<List<IConnector>> {
+public class RobotSearchTask implements IOraListenable<List<IConnector>> {
     private static final Logger LOG = LoggerFactory.getLogger(RobotSearchTask.class);
 
     private final Collection<IOraListener<List<IConnector>>> listeners = new ArrayList<>();
@@ -46,8 +45,8 @@ public class RobotSearchTask implements Callable<IConnector>, IOraListenable<Lis
         return updated;
     }
 
-    @Override
-    public IConnector call() {
+    public IConnector search() {
+        LOG.info("entering call");
         List<IConnector> foundRobots = new ArrayList<>();
 
         while ( true ) {
@@ -57,6 +56,7 @@ public class RobotSearchTask implements Callable<IConnector>, IOraListenable<Lis
                 LOG.info("No robot connected!");
             } else if ( foundRobots.size() == 1 ) {
                 LOG.info("Only {} available.", foundRobots.get(0).getBrickName());
+                LOG.debug("exiting call");
                 return foundRobots.get(0);
             } else {
                 if ( wasListUpdated ) {
@@ -69,6 +69,7 @@ public class RobotSearchTask implements Callable<IConnector>, IOraListenable<Lis
 
                 if ( this.selectedRobot != null ) {
                     LOG.info(this.selectedRobot.toString());
+                    LOG.info("exiting call");
                     return this.selectedRobot;
                 }
             }

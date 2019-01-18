@@ -3,7 +3,6 @@ package de.fhg.iais.roberta.ui;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
-import de.fhg.iais.roberta.usb.UsbProgram;
 import de.fhg.iais.roberta.util.IOraListenable;
 import de.fhg.iais.roberta.util.IOraListener;
 import de.fhg.iais.roberta.util.IOraUiListener;
@@ -12,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
+import javax.swing.JList;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
@@ -59,6 +59,7 @@ public class MainController implements IController, IOraListenable<IConnector> {
     }
 
     public void setState(State state) {
+        LOG.info("setState {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 this.connected = false;
@@ -134,6 +135,10 @@ public class MainController implements IController, IOraListenable<IConnector> {
         }
 
         this.serialMonitorController.setConnector(connector);
+
+        connector.run();
+
+        this.connector.unregisterListener(this::setState);
     }
 
     private void showConfigErrorPopup(String errors) {
@@ -144,11 +149,6 @@ public class MainController implements IController, IOraListenable<IConnector> {
         LOG.debug("setDiscover");
         this.connected = false;
         this.mainView.setDiscover();
-    }
-
-    private void showAdvancedOptions() {
-        LOG.debug("showAdvancedOptions");
-        this.mainView.showAdvancedOptions();
     }
 
     private void checkForValidCustomServerAddressAndUpdate() {
@@ -211,10 +211,6 @@ public class MainController implements IController, IOraListenable<IConnector> {
                 .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }
 
-    private void showSerialMonitor() {
-        this.serialMonitorController.showSerialMonitor();
-    }
-
     @Override
     public void registerListener(IOraListener<IConnector> listener) {
         this.listeners.add(listener);
@@ -244,14 +240,14 @@ public class MainController implements IController, IOraListenable<IConnector> {
                 showAboutPopup();
             } else if ( button.getActionCommand().equals("customaddress") ) {
                 LOG.debug("User custom address");
-                showAdvancedOptions();
+                MainController.this.mainView.showAdvancedOptions();
             } else if ( button.getActionCommand().equals("scan") ) {
                 LOG.debug("User scan");
-                UsbProgram.stopConnector();
+                MainController.this.connector.interrupt();
                 setDiscover();
             } else if ( button.getActionCommand().equals("serial")) {
                 LOG.debug("User serial");
-                showSerialMonitor();
+                MainController.this.serialMonitorController.showSerialMonitor();
             } else {
                 if ( button.isSelected() ) {
                     LOG.debug("User connect");
@@ -276,6 +272,8 @@ public class MainController implements IController, IOraListenable<IConnector> {
 
         @Override
         public void valueChanged(ListSelectionEvent e) {
+            JList source = (JList) e.getSource();
+            source.clearSelection();
             fire(MainController.this.connectorList.get(e.getFirstIndex()));
         }
     }

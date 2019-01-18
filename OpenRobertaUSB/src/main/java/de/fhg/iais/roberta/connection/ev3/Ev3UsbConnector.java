@@ -59,7 +59,7 @@ public class Ev3UsbConnector extends AbstractConnector {
     }
 
     @Override
-    protected void runLoopBody() throws InterruptedException {
+    protected void runLoopBody() {
         switch ( this.state ) {
             case DISCOVER:
                 try {
@@ -67,7 +67,6 @@ public class Ev3UsbConnector extends AbstractConnector {
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) { // brick available and no program running
                         this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     }
-                    Thread.sleep(1000L);
                 } catch ( IOException e ) {
                     // ok
                 }
@@ -86,7 +85,6 @@ public class Ev3UsbConnector extends AbstractConnector {
                         this.state = State.WAIT_FOR_CMD;
                         fire(this.state);
                     }
-                    Thread.sleep(1000L);
                 } catch ( IOException e ) {
                     // ok
                 }
@@ -99,7 +97,6 @@ public class Ev3UsbConnector extends AbstractConnector {
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                         // wait for user
                     }
-                    Thread.sleep(1000L);
                 } catch ( IOException e ) {
                     // ok
                 }
@@ -189,7 +186,6 @@ public class Ev3UsbConnector extends AbstractConnector {
                         this.ev3comm.restartBrick();
                         LOG.info("Firmware update successful. Restarting EV3 now!");
                         reset(null);
-                        Thread.sleep(3000L);
                     } catch ( IOException e ) {
                         LOG.info("{} Brick update failed {}", State.WAIT_FOR_CMD, e.getMessage());
                         reset(State.ERROR_UPDATE);

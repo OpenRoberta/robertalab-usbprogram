@@ -32,24 +32,28 @@ public abstract class AbstractConnector implements IConnector {
         this.brickName = brickName;
     }
 
+    private boolean running = false;
+
     @Override
-    public Boolean call() {
+    public void run() {
+        this.running = true;
         LOG.info("Starting {} connector thread.", this.brickName);
         setupServerCommunicator();
         LOG.info("Server address {}", this.serverAddress);
-        while ( !Thread.currentThread().isInterrupted() ) {
-            try {
-                runLoopBody();
-            } catch ( InterruptedException e ) {
-                reset(null);
-                LOG.info("Stopping {} connector thread.", this.brickName);
-                Thread.currentThread().interrupt();
-            }
+        while ( this.running ) {
+            runLoopBody();
         }
-        return true;
     }
 
-    protected abstract void runLoopBody() throws InterruptedException;
+    @Override
+    public void interrupt() {
+        this.running = false;
+
+        this.state = State.DISCOVER;
+        fire(this.state);
+    }
+
+    protected abstract void runLoopBody();
 
     @Override
     public void userPressConnectButton() {

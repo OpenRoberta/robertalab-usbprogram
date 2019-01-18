@@ -3,15 +3,13 @@ package de.fhg.iais.roberta.connection;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.util.IOraListenable;
 
-import java.util.concurrent.Callable;
-
 /**
  * Defines a set of states, keywords and methods for handling the USB connection of a robot to the Open Roberta server. This interface is intended to be
  * implemented by all connector classes for different robot types.
  *
  * @author dpyka
  */
-public interface IConnector extends Callable<Boolean>, IOraListenable<State> {
+public interface IConnector extends IOraListenable<State> {
 
     enum State {
         DISCOVER,
@@ -55,6 +53,10 @@ public interface IConnector extends Callable<Boolean>, IOraListenable<State> {
      * @return true if a robot is connected, false otherwise
      */
     boolean findRobot();
+
+    void run();
+
+    void interrupt();
 
     /**
      * Tell the connector to collect necessary data from the robot and initialise a registration to Open Roberta.

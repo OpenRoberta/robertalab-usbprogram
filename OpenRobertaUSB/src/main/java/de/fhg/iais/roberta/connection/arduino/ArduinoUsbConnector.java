@@ -128,12 +128,11 @@ public class ArduinoUsbConnector extends AbstractConnector {
     }
 
     @Override
-    protected void runLoopBody() throws InterruptedException {
+    protected void runLoopBody() {
         switch ( this.state ) {
             case DISCOVER:
                 if ( this.portName.isEmpty() ) {
                     LOG.info("No Arduino device connected");
-                    Thread.sleep(1000);
                 } else {
                     // if the user disconnected check the arduino type again, it might've changed
                     if ( this.userDisconnect ) {
@@ -149,11 +148,9 @@ public class ArduinoUsbConnector extends AbstractConnector {
                 this.state = State.WAIT_FOR_CMD;
                 fire(this.state);
 
-                Thread.sleep(1000);
                 break;
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //                    // GUI initiates changing state to CONNECT
-                Thread.sleep(1000);
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
                 this.token = OraTokenGenerator.generateToken();

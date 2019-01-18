@@ -12,19 +12,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class UsbProgram {
     private static final Logger LOG = LoggerFactory.getLogger(UsbProgram.class);
 
-    private static final int SLEEP_TIME = 1000;
     private static final String MESSAGES_BUNDLE = "messages";
     private static final List<IConnector> connectorList = Collections.unmodifiableList(Arrays.asList(new ArduinoUsbConnector(), new Ev3UsbConnector()));
 
-    private static boolean connectorShouldStop = false;
     private final MainController controller;
 
     public UsbProgram() {
@@ -35,37 +29,14 @@ public class UsbProgram {
 
     public void run() {
         LOG.debug("Entering run method!");
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
         while ( !Thread.currentThread().isInterrupted() ) {
-            Future<IConnector>
-                robotSearchFuture =
-                executorService.submit(new RobotSearchTask(connectorList, this.controller::setConnectorList, this.controller));
-
-            try {
                 LOG.debug("Waiting for robot search results!");
-                IConnector selectedRobot = robotSearchFuture.get();
+                IConnector selectedRobot = new RobotSearchTask(connectorList, this.controller::setConnectorList, this.controller).search();
                 LOG.debug("Result {}", selectedRobot);
+
                 this.controller.setConnector(selectedRobot);
 
-                Future<Boolean> connectorFuture = executorService.submit(selectedRobot);
-
-                while ( !connectorFuture.isDone() ) {
-                    if ( connectorShouldStop ) {
-                        connectorFuture.cancel(true);
-                    }
-                    Thread.sleep(SLEEP_TIME);
-                }
-                connectorShouldStop = false;
                 LOG.info("Connector finished!");
-            } catch ( InterruptedException | ExecutionException e ) {
-                LOG.error("Something went wrong: {}", e.getMessage());
-                Thread.currentThread().interrupt();
-            }
         }
-        executorService.shutdown();
-    }
-
-    public static void stopConnector() {
-        connectorShouldStop = true;
     }
 }

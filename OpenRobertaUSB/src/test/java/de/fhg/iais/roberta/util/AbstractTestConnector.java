@@ -9,6 +9,16 @@ public abstract class AbstractTestConnector implements IConnector {
     }
 
     @Override
+    public void run() {
+
+    }
+
+    @Override
+    public void interrupt() {
+
+    }
+
+    @Override
     public void userPressDisconnectButton() {
 
     }
@@ -41,11 +51,6 @@ public abstract class AbstractTestConnector implements IConnector {
     @Override
     public void resetToDefaultServerAddress() {
 
-    }
-
-    @Override
-    public Boolean call() throws Exception {
-        return null;
     }
 
     @Override
