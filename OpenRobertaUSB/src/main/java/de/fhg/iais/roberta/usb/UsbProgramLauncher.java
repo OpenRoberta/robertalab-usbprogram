@@ -1,8 +1,8 @@
 package de.fhg.iais.roberta.usb;
 
-public class USBProgramLauncher {
+public class UsbProgramLauncher {
     public static void main(String[] args) {
-        USBProgram usbProgram = new USBProgram();
+        UsbProgram usbProgram = new UsbProgram();
         usbProgram.run();
     }
 }

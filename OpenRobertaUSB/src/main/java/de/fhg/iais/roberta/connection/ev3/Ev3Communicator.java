@@ -20,7 +20,7 @@ import java.io.IOException;
  *
  * @author dpyka
  */
-class EV3Communicator {
+class Ev3Communicator {
 
     private static final int CONNECT_TIMEOUT = 3000;
 
@@ -33,7 +33,7 @@ class EV3Communicator {
     /**
      * @param brickIp is 10.0.1.1 for leJOS
      */
-    EV3Communicator(String brickIp) {
+    Ev3Communicator(String brickIp) {
         this.brickInfo = brickIp + "/brickinfo";
         this.brickProgram = brickIp + "/program";
         this.brickFirmware = brickIp + "/firmware";

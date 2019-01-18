@@ -3,16 +3,18 @@ package de.fhg.iais.roberta.connection.ev3;
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
-import de.fhg.iais.roberta.util.ORATokenGenerator;
+import de.fhg.iais.roberta.util.OraTokenGenerator;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 /**
  * Intended to be used as Singleton(!). This class handles two connections:
- * robot<->USB program: {@link EV3Communicator}
+ * robot<->USB program: {@link Ev3Communicator}
  * USB program<->Open Roberta server: {@link ServerCommunicator}
  * After setting up an object of this class, you want to run this in a separate thread, because our protocol contains blocking http requests.
  * The state will be changed from the gui in another thread.
@@ -20,10 +22,12 @@ import java.io.IOException;
  * @author dpyka
  * {@link IConnector}
  */
-public class EV3USBConnector extends AbstractConnector {
+public class Ev3UsbConnector extends AbstractConnector {
+    private static final Logger LOG = LoggerFactory.getLogger(Ev3UsbConnector.class);
+
     private static final String brickIp = PropertyHelper.getInstance().getProperty("brickIp");
 
-    private final EV3Communicator ev3comm;
+    private final Ev3Communicator ev3comm;
 
     private final String[] fwfiles = {
         "runtime", "jsonlib", "websocketlib", "ev3menu"
@@ -33,11 +37,11 @@ public class EV3USBConnector extends AbstractConnector {
      * Instantiate the connector with specific properties from the file or use default options defined in this class.
      * Set up a communicator to the EV3 and to the Open Roberta server.
      */
-    public EV3USBConnector() {
+    public Ev3UsbConnector() {
         super("ev3");
 
         LOG.info("Robot ip {}", brickIp);
-        this.ev3comm = new EV3Communicator(brickIp);
+        this.ev3comm = new Ev3Communicator(brickIp);
     }
 
     @Override
@@ -101,7 +105,7 @@ public class EV3USBConnector extends AbstractConnector {
                 }
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
-                this.token = ORATokenGenerator.generateToken();
+                this.token = OraTokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
                 fire(State.WAIT_FOR_SERVER);
                 try {

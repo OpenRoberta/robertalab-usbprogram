@@ -9,17 +9,17 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 
-public class ORAPopup extends JOptionPane {
+public class OraPopup extends JOptionPane {
 
     private static final long serialVersionUID = 1L;
 
     private static final int WIDTH = 250;
 
     public static int showPopup(Component component, String title, String text, Icon icon, String[] txtButtons) {
-        ORAButton buttons[] = new ORAButton[txtButtons.length];
+        OraButton buttons[] = new OraButton[txtButtons.length];
 
         for ( int i = 0; i < txtButtons.length; i++ ) {
-            ORAButton oraButton = new ORAButton();
+            OraButton oraButton = new OraButton();
             oraButton.setText(txtButtons[i]);
             oraButton.addActionListener(e -> {
                 JOptionPane pane = (JOptionPane) ((JComponent) e.getSource()).getParent().getParent();
@@ -40,7 +40,7 @@ public class ORAPopup extends JOptionPane {
 
     public static int showPopup(Component component, String title, String text, Icon icon) {
         if ( icon == null ) {
-            icon = new ImageIcon(ORAPopup.class.getClassLoader().getResource("images/warning-outline.png"));
+            icon = new ImageIcon(OraPopup.class.getClassLoader().getResource("images/warning-outline.png"));
         }
         return showPopup(component, title, text, icon, new String[] {
             "OK"

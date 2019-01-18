@@ -1,7 +1,7 @@
 package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.util.PropertyHelper;
-import de.fhg.iais.roberta.util.ORAListener;
+import de.fhg.iais.roberta.util.IOraListener;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public abstract class AbstractConnector implements IConnector {
-    protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
 
-    private final Collection<ORAListener<State>> listeners = new ArrayList<>();
+    private final Collection<IOraListener<State>> listeners = new ArrayList<>();
 
     private final String serverAddress;
 
@@ -115,18 +115,18 @@ public abstract class AbstractConnector implements IConnector {
     }
 
     @Override
-    public void registerListener(ORAListener<State> listener) {
+    public void registerListener(IOraListener<State> listener) {
         this.listeners.add(listener);
     }
 
     @Override
-    public void unregisterListener(ORAListener<State> listener) {
+    public void unregisterListener(IOraListener<State> listener) {
         this.listeners.remove(listener);
     }
 
     @Override
     public void fire(State object) {
-        for ( ORAListener<State> listener : this.listeners ) {
+        for ( IOraListener<State> listener : this.listeners ) {
             listener.update(object);
         }
     }

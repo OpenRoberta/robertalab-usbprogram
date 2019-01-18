@@ -1,7 +1,7 @@
 package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.connection.IConnector.State;
-import de.fhg.iais.roberta.util.ORAListenable;
+import de.fhg.iais.roberta.util.IOraListenable;
 
 import java.util.concurrent.Callable;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
  *
  * @author dpyka
  */
-public interface IConnector extends Callable<Boolean>, ORAListenable<State> {
+public interface IConnector extends Callable<Boolean>, IOraListenable<State> {
 
     enum State {
         DISCOVER,

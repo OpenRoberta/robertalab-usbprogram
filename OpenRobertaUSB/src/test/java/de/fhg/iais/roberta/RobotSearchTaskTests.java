@@ -3,7 +3,7 @@ package de.fhg.iais.roberta;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.usb.RobotSearchTask;
 import de.fhg.iais.roberta.util.AbstractTestConnector;
-import de.fhg.iais.roberta.util.ORAListener;
+import de.fhg.iais.roberta.util.IOraListener;
 import de.fhg.iais.roberta.util.TestListenable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,7 +108,7 @@ class RobotSearchTaskTests {
         }
     }
 
-    private static class TestListenerListenable extends TestListenable<IConnector> implements ORAListener<List<IConnector>> {
+    private static class TestListenerListenable extends TestListenable<IConnector> implements IOraListener<List<IConnector>> {
         @Override
         public void update(List<IConnector> object) {
             fire(object.get(1));

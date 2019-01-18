@@ -2,9 +2,11 @@ package de.fhg.iais.roberta.connection.arduino;
 
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.ORATokenGenerator;
+import de.fhg.iais.roberta.util.OraTokenGenerator;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,7 +25,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ArduinoUSBConnector extends AbstractConnector {
+public class ArduinoUsbConnector extends AbstractConnector {
+    private static final Logger LOG = LoggerFactory.getLogger(ArduinoUsbConnector.class);
 
     private static final Map<UsbDevice, ArduinoType> supportedRobots = new HashMap<>();
     private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
@@ -34,7 +37,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     private final Map<Integer, String> readIdFileErrors = new HashMap<>();
 
-    public ArduinoUSBConnector() {
+    public ArduinoUsbConnector() {
         super("Arduino");
 
         loadArduinoIds();
@@ -153,7 +156,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 Thread.sleep(1000);
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
-                this.token = ORATokenGenerator.generateToken();
+                this.token = OraTokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
                 fire(this.state);
                 this.brickData = this.arduinoCommunicator.getDeviceInfo();

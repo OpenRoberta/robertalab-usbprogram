@@ -1,6 +1,6 @@
 package de.fhg.iais.roberta.util;
 
 @FunctionalInterface
-public interface ORAListener<T> {
+public interface IOraListener<T> {
     void update(T object);
 }

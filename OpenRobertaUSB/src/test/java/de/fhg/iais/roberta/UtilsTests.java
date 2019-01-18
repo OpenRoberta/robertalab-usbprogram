@@ -1,7 +1,7 @@
 package de.fhg.iais.roberta;
 
 import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.ORATokenGenerator;
+import de.fhg.iais.roberta.util.OraTokenGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.condition.OS.WINDOWS;
 class UtilsTests {
     @Test
     void generateToken_ShouldReturnToken_WhenRun() {
-        String token = ORATokenGenerator.generateToken();
+        String token = OraTokenGenerator.generateToken();
 
         assertThat(token.isEmpty(), is(false));
         assertThat(token, is(notNullValue()));
@@ -31,7 +31,7 @@ class UtilsTests {
     void generateToken_ShouldGenerallyReturnDifferentTokens_WhenRunMultipleTimes() {
         Collection<String> tokens = new ArrayList<>();
         for ( int i = 0; i < 100; i++ ) {
-            tokens.add(ORATokenGenerator.generateToken());
+            tokens.add(OraTokenGenerator.generateToken());
         }
 
         Collection<String> allItems = new HashSet<>();

@@ -2,11 +2,11 @@ package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
-import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
-import de.fhg.iais.roberta.usb.USBProgram;
-import de.fhg.iais.roberta.util.ORAListenable;
-import de.fhg.iais.roberta.util.ORAListener;
-import de.fhg.iais.roberta.util.ORAUIListener;
+import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
+import de.fhg.iais.roberta.usb.UsbProgram;
+import de.fhg.iais.roberta.util.IOraListenable;
+import de.fhg.iais.roberta.util.IOraListener;
+import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +24,10 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class MainController implements IController, ORAListenable<IConnector> {
+public class MainController implements IController, IOraListenable<IConnector> {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
-    private final Collection<ORAListener<IConnector>> listeners = new ArrayList<>();
+    private final Collection<IOraListener<IConnector>> listeners = new ArrayList<>();
 
     // View related
     private final ResourceBundle rb;
@@ -65,7 +65,7 @@ public class MainController implements IController, ORAListenable<IConnector> {
 
                 this.mainView.setWaitForConnect();
 
-                if ( this.connector instanceof ArduinoUSBConnector ) {
+                if ( this.connector instanceof ArduinoUsbConnector ) {
                     this.mainView.showArduinoMenu();
                     this.mainView.setArduinoMenuText(this.connector.getBrickName());
                 }
@@ -119,8 +119,8 @@ public class MainController implements IController, ORAListenable<IConnector> {
 
         LOG.info("GUI setup done. Using {}", connector.getClass().getSimpleName());
 
-        if ( this.connector instanceof ArduinoUSBConnector ) {
-            ArduinoUSBConnector arduinoUSBConnector = (ArduinoUSBConnector) this.connector;
+        if ( this.connector instanceof ArduinoUsbConnector ) {
+            ArduinoUsbConnector arduinoUSBConnector = (ArduinoUsbConnector) this.connector;
             Map<Integer, String> errors = arduinoUSBConnector.getReadIdFileErrors();
             if ( !errors.isEmpty() ) {
                 StringBuilder sb = new StringBuilder(200);
@@ -137,7 +137,7 @@ public class MainController implements IController, ORAListenable<IConnector> {
     }
 
     private void showConfigErrorPopup(String errors) {
-        ORAPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + errors, null);
+        OraPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + errors, null);
     }
 
     private void setDiscover() {
@@ -180,7 +180,7 @@ public class MainController implements IController, ORAListenable<IConnector> {
             String[] buttons = {
                 this.rb.getString("close"), this.rb.getString("cancel")
             };
-            int n = ORAPopup.showPopup(
+            int n = OraPopup.showPopup(
                 this.mainView,
                 this.rb.getString("attention"),
                 this.rb.getString("confirmCloseInfo"),
@@ -198,12 +198,12 @@ public class MainController implements IController, ORAListenable<IConnector> {
     }
 
     private void showAttentionPopup(String key) {
-        ORAPopup.showPopup(this.mainView, this.rb.getString("attention"),
+        OraPopup.showPopup(this.mainView, this.rb.getString("attention"),
             this.rb.getString(key), null);
     }
 
     private void showAboutPopup() {
-        ORAPopup.showPopup(
+        OraPopup.showPopup(
             this.mainView,
             this.rb.getString("about"),
             this.rb.getString("aboutInfo"),
@@ -216,23 +216,23 @@ public class MainController implements IController, ORAListenable<IConnector> {
     }
 
     @Override
-    public void registerListener(ORAListener<IConnector> listener) {
+    public void registerListener(IOraListener<IConnector> listener) {
         this.listeners.add(listener);
     }
 
     @Override
-    public void unregisterListener(ORAListener<IConnector> listener) {
+    public void unregisterListener(IOraListener<IConnector> listener) {
         this.listeners.remove(listener);
     }
 
     @Override
     public void fire(IConnector object) {
-        for ( ORAListener<IConnector> listener : this.listeners ) {
+        for ( IOraListener<IConnector> listener : this.listeners ) {
             listener.update(object);
         }
     }
 
-    private class MainViewListener implements ORAUIListener {
+    private class MainViewListener implements IOraUiListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             AbstractButton button = (AbstractButton) e.getSource();
@@ -247,7 +247,7 @@ public class MainController implements IController, ORAListenable<IConnector> {
                 showAdvancedOptions();
             } else if ( button.getActionCommand().equals("scan") ) {
                 LOG.debug("User scan");
-                USBProgram.stopConnector();
+                UsbProgram.stopConnector();
                 setDiscover();
             } else if ( button.getActionCommand().equals("serial")) {
                 LOG.debug("User serial");

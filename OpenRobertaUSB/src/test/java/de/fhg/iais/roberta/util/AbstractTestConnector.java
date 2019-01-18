@@ -49,12 +49,12 @@ public abstract class AbstractTestConnector implements IConnector {
     }
 
     @Override
-    public void registerListener(ORAListener<State> listener) {
+    public void registerListener(IOraListener<State> listener) {
 
     }
 
     @Override
-    public void unregisterListener(ORAListener<State> listener) {
+    public void unregisterListener(IOraListener<State> listener) {
 
     }
 

@@ -1,29 +1,24 @@
 package de.fhg.iais.roberta.ui;
 
+import javax.swing.BorderFactory;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.Color;
 import java.awt.Font;
 
-import javax.swing.BorderFactory;
-import javax.swing.ButtonModel;
-import javax.swing.JToggleButton;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
-public class ORAToggleButton extends JToggleButton {
+public class OraButton extends JButton {
 
     private static final long serialVersionUID = 1L;
 
-    public ORAToggleButton() {
+    public OraButton() {
 
         this.setBackground(Color.decode("#afca04"));
         this.setFont(new Font("Arial", Font.PLAIN, 16));
         this.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
         this.setForeground(Color.white);
         this.setRolloverEnabled(true);
-        UIManager.put("ToggleButton.select", Color.decode("#afca04"));
-        SwingUtilities.updateComponentTreeUI(this);
         this.getModel().addChangeListener(new ChangeListener() {
 
             @Override

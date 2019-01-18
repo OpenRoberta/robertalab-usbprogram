@@ -7,7 +7,7 @@ import java.util.Random;
  *
  * @author dpyka
  */
-public class ORATokenGenerator {
+public class OraTokenGenerator {
 
     private static final String ALPHABET = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
     private static final int ALPHABET_LENGTH = ALPHABET.length();

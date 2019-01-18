@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-public interface ORAUIListener extends WindowListener, ActionListener, ListSelectionListener {
+public interface IOraUiListener extends WindowListener, ActionListener, ListSelectionListener {
     @Override
     default void actionPerformed(ActionEvent e) {}
 

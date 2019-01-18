@@ -1,8 +1,8 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
-import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
+import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
+import de.fhg.iais.roberta.connection.ev3.Ev3UsbConnector;
 import de.fhg.iais.roberta.ui.MainController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +17,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class USBProgram {
-    private static final Logger LOG = LoggerFactory.getLogger(USBProgram.class);
+public class UsbProgram {
+    private static final Logger LOG = LoggerFactory.getLogger(UsbProgram.class);
 
     private static final int SLEEP_TIME = 1000;
     private static final String MESSAGES_BUNDLE = "messages";
-    private static final List<IConnector> connectorList = Collections.unmodifiableList(Arrays.asList(new ArduinoUSBConnector(), new EV3USBConnector()));
+    private static final List<IConnector> connectorList = Collections.unmodifiableList(Arrays.asList(new ArduinoUsbConnector(), new Ev3UsbConnector()));
 
     private static boolean connectorShouldStop = false;
     private final MainController controller;
 
-    public USBProgram() {
+    public UsbProgram() {
         ResourceBundle messages = ResourceBundle.getBundle(MESSAGES_BUNDLE, Locale.getDefault());
         LOG.info("Using locale {}", (messages.getLocale().getLanguage().isEmpty()) ? "default en" : messages.getLocale());
         this.controller = new MainController(messages);

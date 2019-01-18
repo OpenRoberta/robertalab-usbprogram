@@ -3,8 +3,8 @@ package de.fhg.iais.roberta.ui;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
-import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
-import de.fhg.iais.roberta.util.ORAUIListener;
+import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
+import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +67,9 @@ public class SerialMonitorController implements IController {
         stopSerialLogging();
 
         // TODO improve
-        if ( this.connector instanceof ArduinoUSBConnector ) {
+        if ( this.connector instanceof ArduinoUsbConnector ) {
             this.serialLoggingFuture =
-                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoUSBConnector) this.connector).getPort(), this.serialMonitorView.getSerialRate()));
+                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoUsbConnector) this.connector).getPort(), this.serialMonitorView.getSerialRate()));
         }
     }
 
@@ -82,7 +82,7 @@ public class SerialMonitorController implements IController {
             this.serialLoggingFuture.cancel(true);
         }
     }
-    private class SerialMonitorViewListener implements ORAUIListener {
+    private class SerialMonitorViewListener implements IOraUiListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             LOG.debug("ActionEvent {}", e.getActionCommand());

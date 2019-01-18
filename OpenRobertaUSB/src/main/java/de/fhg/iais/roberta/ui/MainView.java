@@ -1,6 +1,6 @@
 package de.fhg.iais.roberta.ui;
 
-import de.fhg.iais.roberta.util.ORAUIListener;
+import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,9 +105,9 @@ public class MainView extends JFrame {
     private final JTextArea txtAreaInfo = new JTextArea();
 
     private final JPanel pnlButton = new JPanel();
-    private final ORAToggleButton butConnect = new ORAToggleButton();
-    private final ORAToggleButton butScan = new ORAToggleButton();
-    private final ORAButton butClose = new ORAButton();
+    private final OraToggleButton butConnect = new OraToggleButton();
+    private final OraToggleButton butScan = new OraToggleButton();
+    private final OraButton butClose = new OraButton();
 
     // Custom panel
     private final JPanel pnlCustomInfo = new JPanel();
@@ -137,7 +137,7 @@ public class MainView extends JFrame {
 
     private boolean toggle = true;
 
-    public MainView(ResourceBundle messages, ORAUIListener listener) {
+    public MainView(ResourceBundle messages, IOraUiListener listener) {
         this.messages = messages;
 
         this.createIcons();

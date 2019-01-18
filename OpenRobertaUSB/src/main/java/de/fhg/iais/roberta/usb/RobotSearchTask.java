@@ -1,8 +1,8 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.util.ORAListenable;
-import de.fhg.iais.roberta.util.ORAListener;
+import de.fhg.iais.roberta.util.IOraListenable;
+import de.fhg.iais.roberta.util.IOraListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,15 +12,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class RobotSearchTask implements Callable<IConnector>, ORAListenable<List<IConnector>> {
+public class RobotSearchTask implements Callable<IConnector>, IOraListenable<List<IConnector>> {
     private static final Logger LOG = LoggerFactory.getLogger(RobotSearchTask.class);
 
-    private final Collection<ORAListener<List<IConnector>>> listeners = new ArrayList<>();
+    private final Collection<IOraListener<List<IConnector>>> listeners = new ArrayList<>();
 
     private final List<IConnector> connectorList;
     private IConnector selectedRobot = null;
 
-    public RobotSearchTask(List<IConnector> connectorList, ORAListener<List<IConnector>> listener, ORAListenable<IConnector> listenable) {
+    public RobotSearchTask(List<IConnector> connectorList, IOraListener<List<IConnector>> listener, IOraListenable<IConnector> listenable) {
         this.connectorList = Collections.unmodifiableList(connectorList);
 
         this.registerListener(listener);
@@ -76,18 +76,18 @@ public class RobotSearchTask implements Callable<IConnector>, ORAListenable<List
     }
 
     @Override
-    public void registerListener(ORAListener<List<IConnector>> listener) {
+    public void registerListener(IOraListener<List<IConnector>> listener) {
         this.listeners.add(listener);
     }
 
     @Override
-    public void unregisterListener(ORAListener<List<IConnector>> listener) {
+    public void unregisterListener(IOraListener<List<IConnector>> listener) {
         this.listeners.remove(listener);
     }
 
     @Override
     public void fire(List<IConnector> object) {
-        for ( ORAListener<List<IConnector>> listener : this.listeners ) {
+        for ( IOraListener<List<IConnector>> listener : this.listeners ) {
             listener.update(object);
         }
     }
