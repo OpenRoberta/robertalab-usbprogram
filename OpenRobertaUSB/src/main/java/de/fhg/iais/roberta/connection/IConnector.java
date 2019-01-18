@@ -1,6 +1,7 @@
 package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.connection.IConnector.State;
+import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 
 /**
@@ -46,16 +47,10 @@ public interface IConnector extends IOraListenable<State> {
     String CMD_DOWNLOAD_RUN = "download_run";
     String CMD_CONFIGURATION = "configuration";
 
-    /**
-     * Search for a specific robot type for auto detection at the beginning of the program. The robot is considered to not run a user program at this time to be
-     * available.
-     *
-     * @return true if a robot is connected, false otherwise
-     */
-    boolean findRobot();
-
+    // TODO document
     void run();
 
+    // TODO document
     void interrupt();
 
     /**
@@ -64,7 +59,7 @@ public interface IConnector extends IOraListenable<State> {
     void userPressConnectButton();
 
     /**
-     * Disconnect the current robot properly and search for robots again (start condition of the USB program).
+     * Disconnect the current robot properly and detectRobots for robots again (start condition of the USB program).
      */
     void userPressDisconnectButton();
 
@@ -103,4 +98,6 @@ public interface IConnector extends IOraListenable<State> {
      * If gui fields are empty but advanced options is checked, use the default server address.
      */
     void resetToDefaultServerAddress();
+
+    Robot getRobot();
 }

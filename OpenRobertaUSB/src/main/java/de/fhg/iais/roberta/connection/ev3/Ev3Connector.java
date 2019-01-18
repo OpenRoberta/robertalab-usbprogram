@@ -3,6 +3,7 @@ package de.fhg.iais.roberta.connection.ev3;
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
+import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.OraTokenGenerator;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONException;
@@ -22,8 +23,8 @@ import java.io.IOException;
  * @author dpyka
  * {@link IConnector}
  */
-public class Ev3UsbConnector extends AbstractConnector {
-    private static final Logger LOG = LoggerFactory.getLogger(Ev3UsbConnector.class);
+public class Ev3Connector extends AbstractConnector {
+    private static final Logger LOG = LoggerFactory.getLogger(Ev3Connector.class);
 
     private static final String brickIp = PropertyHelper.getInstance().getProperty("brickIp");
 
@@ -37,25 +38,11 @@ public class Ev3UsbConnector extends AbstractConnector {
      * Instantiate the connector with specific properties from the file or use default options defined in this class.
      * Set up a communicator to the EV3 and to the Open Roberta server.
      */
-    public Ev3UsbConnector() {
+    public Ev3Connector() {
         super("ev3");
 
         LOG.info("Robot ip {}", brickIp);
         this.ev3comm = new Ev3Communicator(brickIp);
-    }
-
-    @Override
-    public boolean findRobot() {
-        try {
-            if ( this.ev3comm.checkBrickState().equals("false") ) { // false ^= no program is running
-                return true;
-            } else {
-                LOG.info("EV3 is executing a program");
-                return false;
-            }
-        } catch ( IOException e ) {
-            return false;
-        }
     }
 
     @Override
@@ -250,5 +237,10 @@ public class Ev3UsbConnector extends AbstractConnector {
     @Override
     public void updateFirmware() {
         this.state = State.UPDATE;
+    }
+
+    @Override
+    public Robot getRobot() {
+        return Robot.EV3;
     }
 }

@@ -3,7 +3,7 @@ package de.fhg.iais.roberta.ui;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
-import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
+import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,10 +66,10 @@ public class SerialMonitorController implements IController {
         LOG.debug("restartSerialLogging");
         stopSerialLogging();
 
-        // TODO improve
-        if ( this.connector instanceof ArduinoUsbConnector ) {
+        // TODO improve, only start if its an arduinoconnector
+        if ( this.connector instanceof ArduinoConnector ) {
             this.serialLoggingFuture =
-                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoUsbConnector) this.connector).getPort(), this.serialMonitorView.getSerialRate()));
+                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoConnector) this.connector).getPortName(), this.serialMonitorView.getSerialRate()));
         }
     }
 

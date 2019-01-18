@@ -2,7 +2,7 @@ package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
-import de.fhg.iais.roberta.connection.arduino.ArduinoUsbConnector;
+import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 import de.fhg.iais.roberta.util.IOraListener;
 import de.fhg.iais.roberta.util.IOraUiListener;
@@ -24,16 +24,16 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class MainController implements IController, IOraListenable<IConnector> {
+public class MainController implements IController, IOraListenable<Robot> {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
-    private final Collection<IOraListener<IConnector>> listeners = new ArrayList<>();
+    private final Collection<IOraListener<Robot>> listeners = new ArrayList<>();
 
     // View related
     private final ResourceBundle rb;
     private final MainView mainView;
 
-    private List<IConnector> connectorList = null;
+    private List<Robot> robotList = null;
 
     private boolean connected;
 
@@ -51,11 +51,9 @@ public class MainController implements IController, IOraListenable<IConnector> {
         this.serialMonitorController = new SerialMonitorController(rb);
     }
 
-    public void setConnectorList(List<IConnector> connectorList) {
-        this.connectorList = new ArrayList<>(connectorList);
-
-        List<String> robotNames = this.connectorList.stream().map(IConnector::getBrickName).collect(Collectors.toList());
-        this.mainView.showRobotList(robotNames);
+    public void setRobotList(List<Robot> robotList) {
+        this.robotList = new ArrayList<>(robotList);
+        this.mainView.showRobotList(this.robotList.stream().map(Enum::toString).collect(Collectors.toList()));
     }
 
     public void setState(State state) {
@@ -66,7 +64,7 @@ public class MainController implements IController, IOraListenable<IConnector> {
 
                 this.mainView.setWaitForConnect();
 
-                if ( this.connector instanceof ArduinoUsbConnector ) {
+                if (this.connector.getRobot() == Robot.ARDUINO) {
                     this.mainView.showArduinoMenu();
                     this.mainView.setArduinoMenuText(this.connector.getBrickName());
                 }
@@ -120,29 +118,23 @@ public class MainController implements IController, IOraListenable<IConnector> {
 
         LOG.info("GUI setup done. Using {}", connector.getClass().getSimpleName());
 
-        if ( this.connector instanceof ArduinoUsbConnector ) {
-            ArduinoUsbConnector arduinoUSBConnector = (ArduinoUsbConnector) this.connector;
-            Map<Integer, String> errors = arduinoUSBConnector.getReadIdFileErrors();
-            if ( !errors.isEmpty() ) {
-                StringBuilder sb = new StringBuilder(200);
-                sb.append(System.lineSeparator());
-                for ( Entry<Integer, String> entry : errors.entrySet() ) {
-                    sb.append("Line ").append(entry.getKey()).append(": ").append(this.rb.getString(entry.getValue())).append(System.lineSeparator());
-                }
-                LOG.error("Something went wrong when loading the arduino id file:{}", sb);
-                showConfigErrorPopup(sb.toString());
-            }
-        }
-
         this.serialMonitorController.setConnector(connector);
 
+        // TODO?
         connector.run();
 
         this.connector.unregisterListener(this::setState);
     }
 
-    private void showConfigErrorPopup(String errors) {
-        OraPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + errors, null);
+    public void showConfigErrorPopup(Map<Integer, String> errors) {
+        StringBuilder sb = new StringBuilder(200);
+        sb.append(System.lineSeparator());
+        for ( Entry<Integer, String> entry : errors.entrySet() ) {
+            sb.append("Line ").append(entry.getKey()).append(": ").append(this.rb.getString(entry.getValue())).append(System.lineSeparator());
+        }
+        LOG.error("Something went wrong when loading the arduino id file:{}", sb);
+
+        OraPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + sb, null);
     }
 
     private void setDiscover() {
@@ -212,18 +204,18 @@ public class MainController implements IController, IOraListenable<IConnector> {
     }
 
     @Override
-    public void registerListener(IOraListener<IConnector> listener) {
+    public void registerListener(IOraListener<Robot> listener) {
         this.listeners.add(listener);
     }
 
     @Override
-    public void unregisterListener(IOraListener<IConnector> listener) {
+    public void unregisterListener(IOraListener<Robot> listener) {
         this.listeners.remove(listener);
     }
 
     @Override
-    public void fire(IConnector object) {
-        for ( IOraListener<IConnector> listener : this.listeners ) {
+    public void fire(Robot object) {
+        for ( IOraListener<Robot> listener : this.listeners ) {
             listener.update(object);
         }
     }
@@ -272,9 +264,9 @@ public class MainController implements IController, IOraListenable<IConnector> {
 
         @Override
         public void valueChanged(ListSelectionEvent e) {
-            JList source = (JList) e.getSource();
+            JList<?> source = (JList<?>) e.getSource();
             source.clearSelection();
-            fire(MainController.this.connectorList.get(e.getFirstIndex()));
+            fire(MainController.this.robotList.get(e.getFirstIndex()));
         }
     }
 }

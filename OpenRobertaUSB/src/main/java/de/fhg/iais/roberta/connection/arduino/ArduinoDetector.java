@@ -1,17 +1,15 @@
 package de.fhg.iais.roberta.connection.arduino;
 
-import de.fhg.iais.roberta.connection.AbstractConnector;
+import de.fhg.iais.roberta.connection.IDetector;
+import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.OraTokenGenerator;
 import org.apache.commons.lang3.SystemUtils;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,45 +23,32 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ArduinoUsbConnector extends AbstractConnector {
-    private static final Logger LOG = LoggerFactory.getLogger(ArduinoUsbConnector.class);
+public class ArduinoDetector implements IDetector {
+    private static final Logger LOG = LoggerFactory.getLogger(ArduinoDetector.class);
 
     private static final Map<UsbDevice, ArduinoType> supportedRobots = new HashMap<>();
     private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
 
-    private String portName = null;
-    private ArduinoCommunicator arduinoCommunicator = null;
-    private ArduinoType type = ArduinoType.NONE;
-
     private final Map<Integer, String> readIdFileErrors = new HashMap<>();
 
-    public ArduinoUsbConnector() {
-        super("Arduino");
+    private ArduinoType type = ArduinoType.NONE;
+    private String portName = null;
 
+    public ArduinoDetector() {
         loadArduinoIds();
     }
 
-    private static String checkIdFileLineFormat(List<String> values) {
-        if ( values.size() == 3 ) {
-            try {
-                String.valueOf(Integer.valueOf(values.get(0), 16));
-            } catch ( NumberFormatException e ) {
-                return "errorConfigVendorId";
-            }
-            try {
-                String.valueOf(Integer.valueOf(values.get(1), 16));
-            } catch ( NumberFormatException e ) {
-                return "errorConfigProductId";
-            }
-            try {
-                ArduinoType.fromString(values.get(2));
-            } catch ( IllegalArgumentException e ) {
-                return "errorConfigArduinoType";
-            }
-        } else {
-            return "errorConfigFormat";
-        }
-        return "";
+    @Override
+    public Robot getRobot() {
+        return Robot.ARDUINO;
+    }
+
+    public ArduinoType getType() {
+        return this.type;
+    }
+
+    public String getPortName() {
+        return this.portName;
     }
 
     private void loadArduinoIds() {
@@ -101,143 +86,46 @@ public class ArduinoUsbConnector extends AbstractConnector {
         return new HashMap<>(this.readIdFileErrors);
     }
 
+    private static String checkIdFileLineFormat(List<String> values) {
+        if ( values.size() == 3 ) {
+            try {
+                String.valueOf(Integer.valueOf(values.get(0), 16));
+            } catch ( NumberFormatException e ) {
+                return "errorConfigVendorId";
+            }
+            try {
+                String.valueOf(Integer.valueOf(values.get(1), 16));
+            } catch ( NumberFormatException e ) {
+                return "errorConfigProductId";
+            }
+            try {
+                ArduinoType.fromString(values.get(2));
+            } catch ( IllegalArgumentException e ) {
+                return "errorConfigArduinoType";
+            }
+        } else {
+            return "errorConfigFormat";
+        }
+        return "";
+    }
+
     @Override
-    public boolean findRobot() {
+    public boolean detectRobot() {
         if ( SystemUtils.IS_OS_LINUX ) {
             LOG.debug("Linux detected: searching for Arduinos");
-            this.type = findArduinoLinux();
+            this.type = detectArduinoLinux();
         } else if ( SystemUtils.IS_OS_WINDOWS ) {
             LOG.debug("Windows detected: searching for Arduinos");
-            this.type = findArduinoWindows();
+            this.type = detectArduinoWindows();
         } else if ( SystemUtils.IS_OS_MAC_OSX ) {
             LOG.debug("MacOS detected: searching for Arduinos");
-            this.type = findArduinoMac();
-        }
-        switch ( this.type ) {
-            // Classic Arduino types
-            case UNO:
-            case MEGA:
-            case NANO:
-                this.brickName = "Arduino " + this.type.getPrettyText();
-                break;
-            // Special Arduino types, use the pretty text instead
-            default:
-                this.brickName = this.type.getPrettyText();
+            this.type = detectArduinoMac();
         }
         return this.type != ArduinoType.NONE;
     }
 
-    @Override
-    protected void runLoopBody() {
-        switch ( this.state ) {
-            case DISCOVER:
-                if ( this.portName.isEmpty() ) {
-                    LOG.info("No Arduino device connected");
-                } else {
-                    // if the user disconnected check the arduino type again, it might've changed
-                    if ( this.userDisconnect ) {
-                        findRobot();
-                    }
-                    this.arduinoCommunicator = new ArduinoCommunicator(this.brickName, this.type);
-                    this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
-                    fire(this.state);
-                    break;
-                }
-                break;
-            case WAIT_EXECUTION:
-                this.state = State.WAIT_FOR_CMD;
-                fire(this.state);
-
-                break;
-            case WAIT_FOR_CONNECT_BUTTON_PRESS:
-                //                    // GUI initiates changing state to CONNECT
-                break;
-            case CONNECT_BUTTON_IS_PRESSED:
-                this.token = OraTokenGenerator.generateToken();
-                this.state = State.WAIT_FOR_SERVER;
-                fire(this.state);
-                this.brickData = this.arduinoCommunicator.getDeviceInfo();
-                this.brickData.put(KEY_TOKEN, this.token);
-                this.brickData.put(KEY_CMD, CMD_REGISTER);
-                try {
-                    JSONObject serverResponse = this.serverCommunicator.pushRequest(this.brickData);
-                    String command = serverResponse.getString("cmd");
-                    switch ( command ) {
-                        case CMD_REPEAT:
-                            this.state = State.WAIT_FOR_CMD;
-                            fire(this.state);
-                            LOG.info("Robot successfully registered with token {}, waiting for commands", this.token);
-                            break;
-                        case CMD_ABORT:
-                            LOG.info("registration timeout");
-                            fire(State.TOKEN_TIMEOUT);
-                            this.state = State.DISCOVER;
-                            fire(this.state);
-                            break;
-                        default:
-                            throw new RuntimeException("Unexpected command " + command + "from server");
-                    }
-                } catch ( IOException | RuntimeException io ) {
-                    LOG.info("CONNECT {}", io.getMessage());
-                    reset(State.ERROR_HTTP);
-                }
-                break;
-            case WAIT_FOR_CMD:
-                this.brickData = this.arduinoCommunicator.getDeviceInfo();
-                this.brickData.put(KEY_TOKEN, this.token);
-                this.brickData.put(KEY_CMD, CMD_PUSH);
-                try {
-                    JSONObject response = this.serverCommunicator.pushRequest(this.brickData);
-                    String cmdKey = response.getString(KEY_CMD);
-                    if ( cmdKey.equals(CMD_REPEAT) ) {
-                        break;
-                    } else if ( cmdKey.equals(CMD_DOWNLOAD) ) {
-                        LOG.info("Download user program");
-                        try {
-                            byte[] binaryfile = this.serverCommunicator.downloadProgram(this.brickData);
-                            String filename = this.serverCommunicator.getFilename();
-                            File temp = File.createTempFile(filename, "");
-
-                            temp.deleteOnExit();
-
-                            if ( !temp.exists() ) {
-                                throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
-                            }
-
-                            try (FileOutputStream os = new FileOutputStream(temp)) {
-                                os.write(binaryfile);
-                            }
-
-                            this.state = State.WAIT_UPLOAD;
-                            fire(this.state);
-                            this.arduinoCommunicator.uploadFile(this.portName, temp.getAbsolutePath());
-                            this.state = State.WAIT_EXECUTION;
-                            fire(this.state);
-                        } catch ( IOException io ) {
-                            LOG.info("Download and run failed: {}", io.getMessage());
-                            LOG.info("Do not give up yet - make the next push request");
-                            this.state = State.WAIT_FOR_CMD;
-
-                        }
-                    } else if ( cmdKey.equals(CMD_CONFIGURATION) ) {
-                        LOG.info("Configuration");
-                    } else if ( cmdKey.equals(CMD_UPDATE) ) {
-                        LOG.info("Firmware updated not necessary and not supported!");// LOG and go to abort
-                    } else if ( cmdKey.equals(CMD_ABORT) ) {
-                        throw new RuntimeException("Unexpected response from server");
-                    }
-                } catch ( RuntimeException | IOException r ) {
-                    LOG.info("WAIT_FOR_CMD {}", r.getMessage());
-                    reset(State.ERROR_HTTP);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
     // based on https://stackoverflow.com/questions/22042661/mac-osx-get-usb-vendor-id-and-product-id
-    private ArduinoType findArduinoMac() {
+    private ArduinoType detectArduinoMac() {
         try {
             Runtime rt = Runtime.getRuntime();
             String commands[] = {
@@ -256,9 +144,9 @@ public class ArduinoUsbConnector extends AbstractConnector {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
                 String line;
                 while ( (line = reader.readLine()) != null ) {
-                    for ( Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
+                    for ( Map.Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
                         UsbDevice usbDevice = robotEntry.getKey();
-                        // search the device in the commands output
+                        // detectRobots the device in the commands output
                         Matcher m = Pattern.compile("(?i)0x" + usbDevice.vendorId + ":0x" + usbDevice.productId + " 0x(\\d{3}).* \\/").matcher(line);
                         if ( m.find() ) {
                             // the corresponding tty ID seems to be the third hex number
@@ -290,7 +178,7 @@ public class ArduinoUsbConnector extends AbstractConnector {
         return ArduinoType.NONE;
     }
 
-    private ArduinoType findArduinoWindows() {
+    private ArduinoType detectArduinoWindows() {
         try {
             for ( Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
                 UsbDevice usbDevice = robotEntry.getKey();
@@ -317,7 +205,7 @@ public class ArduinoUsbConnector extends AbstractConnector {
         }
     }
 
-    private ArduinoType findArduinoLinux() {
+    private ArduinoType detectArduinoLinux() {
         File devices = new File("/sys/bus/usb/devices");
 
         // check every usb device
@@ -357,9 +245,5 @@ public class ArduinoUsbConnector extends AbstractConnector {
         }
 
         return ArduinoType.NONE;
-    }
-
-    public String getPort() {
-        return this.portName;
     }
 }
