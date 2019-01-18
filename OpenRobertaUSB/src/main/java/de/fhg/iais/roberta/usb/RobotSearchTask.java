@@ -1,6 +1,8 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.util.ORAListenable;
+import de.fhg.iais.roberta.util.ORAListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,21 +10,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.Callable;
 
-public class RobotSearchTask extends Observable implements Callable<IConnector>, Observer {
+public class RobotSearchTask implements Callable<IConnector>, ORAListenable<List<IConnector>> {
     private static final Logger LOG = LoggerFactory.getLogger(RobotSearchTask.class);
+
+    private final Collection<ORAListener<List<IConnector>>> listeners = new ArrayList<>();
 
     private final List<IConnector> connectorList;
     private IConnector selectedRobot = null;
 
-    public RobotSearchTask(List<IConnector> connectorList, Observer observer, Observable observable) {
+    public RobotSearchTask(List<IConnector> connectorList, ORAListener<List<IConnector>> listener, ORAListenable<IConnector> listenable) {
         this.connectorList = Collections.unmodifiableList(connectorList);
 
-        this.addObserver(observer);
-        observable.addObserver(this);
+        this.registerListener(listener);
+        listenable.registerListener(object -> this.selectedRobot = object);
     }
 
     private boolean updateFoundRobots(Collection<IConnector> foundRobots) {
@@ -62,8 +64,7 @@ public class RobotSearchTask extends Observable implements Callable<IConnector>,
                     for ( IConnector robot : foundRobots ) {
                         LOG.info("{} available.", robot.getBrickName());
                     }
-                    setChanged();
-                    notifyObservers(foundRobots);
+                    fire(foundRobots);
                 }
 
                 if ( this.selectedRobot != null ) {
@@ -75,7 +76,19 @@ public class RobotSearchTask extends Observable implements Callable<IConnector>,
     }
 
     @Override
-    public void update(Observable observable, Object o) {
-        this.selectedRobot = (IConnector) o;
+    public void registerListener(ORAListener<List<IConnector>> listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void unregisterListener(ORAListener<List<IConnector>> listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public void fire(List<IConnector> object) {
+        for ( ORAListener<List<IConnector>> listener : this.listeners ) {
+            listener.update(object);
+        }
     }
 }

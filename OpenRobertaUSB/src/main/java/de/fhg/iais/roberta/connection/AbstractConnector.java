@@ -1,14 +1,18 @@
 package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.util.PropertyHelper;
+import de.fhg.iais.roberta.util.ORAListener;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Observable;
+import java.util.ArrayList;
+import java.util.Collection;
 
-public abstract class AbstractConnector extends Observable implements IConnector {
+public abstract class AbstractConnector implements IConnector {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
+
+    private final Collection<ORAListener<State>> listeners = new ArrayList<>();
 
     private final String serverAddress;
 
@@ -57,18 +61,12 @@ public abstract class AbstractConnector extends Observable implements IConnector
         LOG.info("DISCONNECTING by user");
         this.userDisconnect = true;
         this.state = State.DISCOVER;
-        notifyConnectionStateChanged(this.state);
+        fire(this.state);
     }
 
     @Override
     public void close() {
         userPressDisconnectButton();
-    }
-
-    @Override
-    public void notifyConnectionStateChanged(State state) {
-        setChanged();
-        notifyObservers(state);
     }
 
     @Override
@@ -82,7 +80,7 @@ public abstract class AbstractConnector extends Observable implements IConnector
     }
 
     @Override
-    public void update() {
+    public void updateFirmware() {
         // no firmware update intended for general robots
     }
 
@@ -109,10 +107,27 @@ public abstract class AbstractConnector extends Observable implements IConnector
      */
     protected void reset(State additionalErrorMessage) {
         if ( !this.userDisconnect && (additionalErrorMessage != null) ) {
-            notifyConnectionStateChanged(additionalErrorMessage);
+            fire(additionalErrorMessage);
         }
         this.userDisconnect = false;
         this.state = State.DISCOVER;
-        notifyConnectionStateChanged(this.state);
+        fire(this.state);
+    }
+
+    @Override
+    public void registerListener(ORAListener<State> listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void unregisterListener(ORAListener<State> listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public void fire(State object) {
+        for ( ORAListener<State> listener : this.listeners ) {
+            listener.update(object);
+        }
     }
 }

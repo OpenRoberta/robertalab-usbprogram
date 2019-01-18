@@ -1,5 +1,6 @@
 package de.fhg.iais.roberta.ui;
 
+import de.fhg.iais.roberta.util.ORAUIListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,7 @@ public class MainView extends JFrame {
 
     private boolean toggle = true;
 
-    public MainView(ResourceBundle messages, MainViewListener listener) {
+    public MainView(ResourceBundle messages, ORAUIListener listener) {
         this.messages = messages;
 
         this.createIcons();

@@ -138,13 +138,13 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     }
                     this.arduinoCommunicator = new ArduinoCommunicator(this.brickName, this.type);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
-                    notifyConnectionStateChanged(this.state);
+                    fire(this.state);
                     break;
                 }
                 break;
             case WAIT_EXECUTION:
                 this.state = State.WAIT_FOR_CMD;
-                notifyConnectionStateChanged(this.state);
+                fire(this.state);
 
                 Thread.sleep(1000);
                 break;
@@ -155,7 +155,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
             case CONNECT_BUTTON_IS_PRESSED:
                 this.token = ORATokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
-                notifyConnectionStateChanged(this.state);
+                fire(this.state);
                 this.brickData = this.arduinoCommunicator.getDeviceInfo();
                 this.brickData.put(KEY_TOKEN, this.token);
                 this.brickData.put(KEY_CMD, CMD_REGISTER);
@@ -165,14 +165,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     switch ( command ) {
                         case CMD_REPEAT:
                             this.state = State.WAIT_FOR_CMD;
-                            notifyConnectionStateChanged(this.state);
+                            fire(this.state);
                             LOG.info("Robot successfully registered with token {}, waiting for commands", this.token);
                             break;
                         case CMD_ABORT:
                             LOG.info("registration timeout");
-                            notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
+                            fire(State.TOKEN_TIMEOUT);
                             this.state = State.DISCOVER;
-                            notifyConnectionStateChanged(this.state);
+                            fire(this.state);
                             break;
                         default:
                             throw new RuntimeException("Unexpected command " + command + "from server");
@@ -209,10 +209,10 @@ public class ArduinoUSBConnector extends AbstractConnector {
                             }
 
                             this.state = State.WAIT_UPLOAD;
-                            notifyConnectionStateChanged(this.state);
+                            fire(this.state);
                             this.arduinoCommunicator.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
-                            notifyConnectionStateChanged(this.state);
+                            fire(this.state);
                         } catch ( IOException io ) {
                             LOG.info("Download and run failed: {}", io.getMessage());
                             LOG.info("Do not give up yet - make the next push request");

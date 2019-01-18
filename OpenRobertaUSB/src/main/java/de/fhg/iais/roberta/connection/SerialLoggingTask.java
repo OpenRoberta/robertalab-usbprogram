@@ -1,22 +1,26 @@
 package de.fhg.iais.roberta.connection;
 
 import com.fazecast.jSerialComm.SerialPort;
+import de.fhg.iais.roberta.util.ORAListenable;
+import de.fhg.iais.roberta.util.ORAListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 
-public class SerialLoggingTask extends Observable implements Callable<Void> {
+public class SerialLoggingTask implements Callable<Void>, ORAListenable<byte[]> {
     private static final Logger LOG = LoggerFactory.getLogger(SerialLoggingTask.class);
+
+    private final Collection<ORAListener<byte[]>> listeners = new ArrayList<>();
 
     private final String port;
     private final int serialRate;
 
-    public SerialLoggingTask(Observer observer, String port, int serialRate) {
-        addObserver(observer);
+    public SerialLoggingTask(ORAListener<byte[]> listener, String port, int serialRate) {
+        registerListener(listener);
         this.port = port;
         this.serialRate = serialRate;
     }
@@ -37,8 +41,7 @@ public class SerialLoggingTask extends Observable implements Callable<Void> {
 
                 byte[] readBuffer = new byte[comPort.bytesAvailable()];
                 comPort.readBytes(readBuffer, readBuffer.length);
-                setChanged();
-                notifyObservers(readBuffer);
+                fire(readBuffer);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -46,5 +49,22 @@ public class SerialLoggingTask extends Observable implements Callable<Void> {
 
         comPort.closePort();
         return null;
+    }
+
+    @Override
+    public void registerListener(ORAListener<byte[]> listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void unregisterListener(ORAListener<byte[]> listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public void fire(byte[] object) {
+        for ( ORAListener<byte[]> listener : this.listeners ) {
+            listener.update(object);
+        }
     }
 }

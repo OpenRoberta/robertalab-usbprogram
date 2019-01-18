@@ -4,7 +4,6 @@ import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
 import de.fhg.iais.roberta.ui.MainController;
-import de.fhg.iais.roberta.ui.RobotSearchObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +26,11 @@ public class USBProgram {
 
     private static boolean connectorShouldStop = false;
     private final MainController controller;
-    private final RobotSearchObserver robotSearchObserver;
 
     public USBProgram() {
         ResourceBundle messages = ResourceBundle.getBundle(MESSAGES_BUNDLE, Locale.getDefault());
         LOG.info("Using locale {}", (messages.getLocale().getLanguage().isEmpty()) ? "default en" : messages.getLocale());
         this.controller = new MainController(messages);
-        this.robotSearchObserver = new RobotSearchObserver(this.controller);
     }
 
     public void run() {
@@ -42,7 +39,7 @@ public class USBProgram {
         while ( !Thread.currentThread().isInterrupted() ) {
             Future<IConnector>
                 robotSearchFuture =
-                executorService.submit(new RobotSearchTask(connectorList, this.robotSearchObserver, this.controller));
+                executorService.submit(new RobotSearchTask(connectorList, this.controller::setConnectorList, this.controller));
 
             try {
                 LOG.debug("Waiting for robot search results!");

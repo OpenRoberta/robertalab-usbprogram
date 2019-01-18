@@ -1,5 +1,7 @@
 package de.fhg.iais.roberta.ui;
 
+import de.fhg.iais.roberta.util.ORAUIListener;
+
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -26,7 +28,7 @@ public class SerialMonitorView extends JFrame {
         new Integer[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200 });
     private final JButton clearButton = new JButton();
 
-    public SerialMonitorView(ResourceBundle messages, SerialMonitorViewListener listener) {
+    public SerialMonitorView(ResourceBundle messages, ORAUIListener listener) {
         // General
         this.setSize(700, 500);
         this.setLocationRelativeTo(null);

@@ -67,20 +67,20 @@ public class EV3USBConnector extends AbstractConnector {
                 } catch ( IOException e ) {
                     // ok
                 }
-                notifyConnectionStateChanged(this.state);
+                fire(this.state);
                 break;
             case WAIT_EXECUTION:
-                notifyConnectionStateChanged(this.state);
+                fire(this.state);
                 try {
                     if ( this.ev3comm.checkBrickState().equals("true") ) {
                         // program is running
                         this.state = State.WAIT_EXECUTION;
-                        //notifyConnectionStateChanged(this.state);
+                        //fire(this.state);
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                         // brick available and no program running
                         LOG.info("{} EV3 plugged in again, no program running, OK", State.WAIT_EXECUTION);
                         this.state = State.WAIT_FOR_CMD;
-                        notifyConnectionStateChanged(this.state);
+                        fire(this.state);
                     }
                     Thread.sleep(1000L);
                 } catch ( IOException e ) {
@@ -91,7 +91,7 @@ public class EV3USBConnector extends AbstractConnector {
                 try {
                     if ( this.ev3comm.checkBrickState().equals("true") ) {
                         this.state = State.DISCOVER;
-                        notifyConnectionStateChanged(State.DISCOVER);
+                        fire(State.DISCOVER);
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                         // wait for user
                     }
@@ -103,7 +103,7 @@ public class EV3USBConnector extends AbstractConnector {
             case CONNECT_BUTTON_IS_PRESSED:
                 this.token = ORATokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
-                notifyConnectionStateChanged(State.WAIT_FOR_SERVER);
+                fire(State.WAIT_FOR_SERVER);
                 try {
                     this.brickData = this.ev3comm.pushToBrick(CMD_REGISTER);
                     this.brickData.put(KEY_TOKEN, this.token);
@@ -130,7 +130,7 @@ public class EV3USBConnector extends AbstractConnector {
                             break;
                         }
                         this.state = State.WAIT_FOR_CMD;
-                        notifyConnectionStateChanged(State.WAIT_FOR_CMD);
+                        fire(State.WAIT_FOR_CMD);
                     } else if ( command.equals(CMD_ABORT) ) {
                         reset(State.TOKEN_TIMEOUT);
                     } else {
@@ -224,7 +224,7 @@ public class EV3USBConnector extends AbstractConnector {
             // ok
         }
 
-        notifyConnectionStateChanged(State.DISCOVER);
+        fire(State.DISCOVER);
         this.state = State.DISCOVER;
     }
 
@@ -248,7 +248,7 @@ public class EV3USBConnector extends AbstractConnector {
     }
 
     @Override
-    public void update() {
+    public void updateFirmware() {
         this.state = State.UPDATE;
     }
 }

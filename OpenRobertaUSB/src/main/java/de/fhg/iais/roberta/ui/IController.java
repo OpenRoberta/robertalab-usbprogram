@@ -6,14 +6,14 @@ import de.fhg.iais.roberta.connection.IConnector.State;
 public interface IController {
     /**
      * Sets the connector that provides access to the data necessary for this controller.
-     * Should also add any connector observers that the controller may have to observe the connector.
-     * @param connector the connector that should be
+     * Should also add any connector listeners that the controller may have to listen to the connector.
+     * @param connector the connector that should be handled by this controller
      */
     void setConnector(IConnector connector);
 
     /**
-     *
-     * @param state
+     * Sets the state of the connector
+     * @param state the state of the connector
      */
     void setState(State state);
 }

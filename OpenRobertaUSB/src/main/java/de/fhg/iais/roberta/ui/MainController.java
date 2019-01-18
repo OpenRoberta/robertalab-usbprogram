@@ -3,21 +3,31 @@ package de.fhg.iais.roberta.ui;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
+import de.fhg.iais.roberta.usb.USBProgram;
+import de.fhg.iais.roberta.util.ORAListenable;
+import de.fhg.iais.roberta.util.ORAListener;
+import de.fhg.iais.roberta.util.ORAUIListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
+import javax.swing.event.ListSelectionEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Observable;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class MainController extends Observable implements IController {
+public class MainController implements IController, ORAListenable<IConnector> {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
+
+    private final Collection<ORAListener<IConnector>> listeners = new ArrayList<>();
 
     // View related
     private final ResourceBundle rb;
@@ -27,38 +37,25 @@ public class MainController extends Observable implements IController {
 
     private boolean connected;
 
-    private final ConnectorObserver connectorObserver;
-
     private IConnector connector = null;
 
     // Child controllers of the main controller, this includes other windows/JFrames that are launched from the main controller
     private final SerialMonitorController serialMonitorController;
 
     public MainController(ResourceBundle rb) {
-        this.mainView = new MainView(rb, new MainViewListener(this));
+        this.mainView = new MainView(rb, new MainViewListener());
         this.mainView.setVisible(true);
         this.rb = rb;
         this.connected = false;
 
-        this.connectorObserver = new ConnectorObserver(this);
-
         this.serialMonitorController = new SerialMonitorController(rb);
     }
 
-    void setConnectorList(List<IConnector> connectorList) {
+    public void setConnectorList(List<IConnector> connectorList) {
         this.connectorList = new ArrayList<>(connectorList);
 
         List<String> robotNames = this.connectorList.stream().map(IConnector::getBrickName).collect(Collectors.toList());
         this.mainView.showRobotList(robotNames);
-    }
-
-    void setSelectedRobot(int index) {
-        setChanged();
-        notifyObservers(this.connectorList.get(index));
-    }
-
-    public IConnector getConnector() {
-        return this.connector;
     }
 
     public void setState(State state) {
@@ -116,7 +113,7 @@ public class MainController extends Observable implements IController {
     public void setConnector(IConnector connector) {
         LOG.debug("setConnector");
         this.connector = connector;
-        ((Observable) this.connector).addObserver(this.connectorObserver);
+        this.connector.registerListener(this::setState);
 
         this.mainView.hideRobotList();
 
@@ -143,18 +140,18 @@ public class MainController extends Observable implements IController {
         ORAPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + errors, null);
     }
 
-    void setDiscover() {
+    private void setDiscover() {
         LOG.debug("setDiscover");
         this.connected = false;
         this.mainView.setDiscover();
     }
 
-    void showAdvancedOptions() {
+    private void showAdvancedOptions() {
         LOG.debug("showAdvancedOptions");
         this.mainView.showAdvancedOptions();
     }
 
-    void checkForValidCustomServerAddressAndUpdate() {
+    private void checkForValidCustomServerAddressAndUpdate() {
         LOG.debug("checkForValidCustomServerAddressAndUpdate");
         if ( this.mainView.isCustomAddressSelected() ) {
             String ip = this.mainView.getCustomIP();
@@ -177,7 +174,7 @@ public class MainController extends Observable implements IController {
         }
     }
 
-    void closeApplication() {
+    private void closeApplication() {
         LOG.debug("closeApplication");
         if ( this.connected ) {
             String[] buttons = {
@@ -205,7 +202,7 @@ public class MainController extends Observable implements IController {
             this.rb.getString(key), null);
     }
 
-    void showAboutPopup() {
+    private void showAboutPopup() {
         ORAPopup.showPopup(
             this.mainView,
             this.rb.getString("about"),
@@ -214,7 +211,72 @@ public class MainController extends Observable implements IController {
                 .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }
 
-    void showSerialMonitor() {
+    private void showSerialMonitor() {
         this.serialMonitorController.showSerialMonitor();
+    }
+
+    @Override
+    public void registerListener(ORAListener<IConnector> listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void unregisterListener(ORAListener<IConnector> listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public void fire(IConnector object) {
+        for ( ORAListener<IConnector> listener : this.listeners ) {
+            listener.update(object);
+        }
+    }
+
+    private class MainViewListener implements ORAUIListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            AbstractButton button = (AbstractButton) e.getSource();
+            if ( button.getActionCommand().equals("close") ) {
+                LOG.debug("User close");
+                closeApplication();
+            } else if ( button.getActionCommand().equals("about") ) {
+                LOG.debug("User about");
+                showAboutPopup();
+            } else if ( button.getActionCommand().equals("customaddress") ) {
+                LOG.debug("User custom address");
+                showAdvancedOptions();
+            } else if ( button.getActionCommand().equals("scan") ) {
+                LOG.debug("User scan");
+                USBProgram.stopConnector();
+                setDiscover();
+            } else if ( button.getActionCommand().equals("serial")) {
+                LOG.debug("User serial");
+                showSerialMonitor();
+            } else {
+                if ( button.isSelected() ) {
+                    LOG.debug("User connect");
+                    if ( MainController.this.connector != null ) { //TODO
+                        checkForValidCustomServerAddressAndUpdate();
+                        MainController.this.connector.userPressConnectButton();
+                    }
+                } else {
+                    LOG.debug("User disconnect");
+                    if ( MainController.this.connector != null ) {
+                        MainController.this.connector.userPressDisconnectButton();
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void windowClosing(WindowEvent e) {
+            LOG.debug("User close");
+            closeApplication();
+        }
+
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+            fire(MainController.this.connectorList.get(e.getFirstIndex()));
+        }
     }
 }

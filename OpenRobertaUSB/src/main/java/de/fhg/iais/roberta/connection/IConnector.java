@@ -1,5 +1,8 @@
 package de.fhg.iais.roberta.connection;
 
+import de.fhg.iais.roberta.connection.IConnector.State;
+import de.fhg.iais.roberta.util.ORAListenable;
+
 import java.util.concurrent.Callable;
 
 /**
@@ -8,7 +11,7 @@ import java.util.concurrent.Callable;
  *
  * @author dpyka
  */
-public interface IConnector extends Callable<Boolean> {
+public interface IConnector extends Callable<Boolean>, ORAListenable<State> {
 
     enum State {
         DISCOVER,
@@ -69,13 +72,6 @@ public interface IConnector extends Callable<Boolean> {
     void close();
 
     /**
-     * Tell the gui, that the connector state has changed.
-     *
-     * @param state the state of the connector
-     */
-    void notifyConnectionStateChanged(State state);
-
-    /**
      * Get the token to display in the gui.
      *
      * @return the token
@@ -92,7 +88,7 @@ public interface IConnector extends Callable<Boolean> {
     /**
      * In this state, the connector will download system libraries from the server, and upload it to the robot.
      */
-    void update();
+    void updateFirmware();
 
     /**
      * Update the server communicator's address to which it will connect.

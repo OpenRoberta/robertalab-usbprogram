@@ -4,11 +4,13 @@ import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
+import de.fhg.iais.roberta.util.ORAUIListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.SwingUtilities;
-import java.util.Observable;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,19 +24,21 @@ public class SerialMonitorController implements IController {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Future<Void> serialLoggingFuture = null;
 
-    private final SerialLoggingObserver serialLoggingObserver;
-    private final ConnectorObserver connectorObserver;
-
     private IConnector connector = null;
 
-    public SerialMonitorController(ResourceBundle rb) {
-        this.serialMonitorView = new SerialMonitorView(rb, new SerialMonitorViewListener(this));
-        this.serialMonitorView.setVisible(false);
+    SerialMonitorController(ResourceBundle rb) {
+        this.serialMonitorView = new SerialMonitorView(rb, new SerialMonitorViewListener());
 
-        this.serialLoggingObserver = new SerialLoggingObserver(this);
-        this.connectorObserver = new ConnectorObserver(this);
+        this.serialMonitorView.setVisible(false);
     }
 
+    @Override
+    public void setConnector(IConnector connector) {
+        this.connector = connector;
+        this.connector.registerListener(this::setState);
+    }
+
+    @Override
     public void setState(State state) {
         switch ( state ) {
             case WAIT_UPLOAD:
@@ -58,35 +62,41 @@ public class SerialMonitorController implements IController {
         restartSerialLogging();
     }
 
-    void restartSerialLogging() {
+    private void restartSerialLogging() {
         LOG.debug("restartSerialLogging");
         stopSerialLogging();
 
         // TODO improve
         if ( this.connector instanceof ArduinoUSBConnector ) {
             this.serialLoggingFuture =
-                this.executorService.submit(new SerialLoggingTask(this.serialLoggingObserver,
-                    ((ArduinoUSBConnector) this.connector).getPort(),
-                    this.serialMonitorView.getSerialRate()));
+                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoUSBConnector) this.connector).getPort(), this.serialMonitorView.getSerialRate()));
         }
     }
 
-    void appendSerial(byte[] readBuffer) {
+    private void appendSerial(byte[] readBuffer) {
         SwingUtilities.invokeLater(() -> this.serialMonitorView.appendText(readBuffer));
     }
 
-    void clearSerialLog() {
-        this.serialMonitorView.clearText();
-    }
-
-    void stopSerialLogging() {
+    private void stopSerialLogging() {
         if ( this.serialLoggingFuture != null ) {
             this.serialLoggingFuture.cancel(true);
         }
     }
+    private class SerialMonitorViewListener implements ORAUIListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            LOG.debug("ActionEvent {}", e.getActionCommand());
+            if ( e.getActionCommand().equals("comboBoxChanged") ) {
+                restartSerialLogging();
+                SerialMonitorController.this.serialMonitorView.clearText();
+            } else if ( e.getActionCommand().equals("clear") ) {
+                SerialMonitorController.this.serialMonitorView.clearText();
+            }
+        }
 
-    public void setConnector(IConnector connector) {
-        this.connector = connector;
-        ((Observable) this.connector).addObserver(this.connectorObserver);
+        @Override
+        public void windowClosing(WindowEvent e) {
+            stopSerialLogging();
+        }
     }
 }

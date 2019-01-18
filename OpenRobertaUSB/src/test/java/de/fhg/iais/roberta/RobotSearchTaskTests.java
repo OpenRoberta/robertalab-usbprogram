@@ -2,14 +2,15 @@ package de.fhg.iais.roberta;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.usb.RobotSearchTask;
+import de.fhg.iais.roberta.util.AbstractTestConnector;
+import de.fhg.iais.roberta.util.ORAListener;
+import de.fhg.iais.roberta.util.TestListenable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,8 +42,8 @@ class RobotSearchTaskTests {
         connectorList.add(new TestNotFoundConnector());
         connectorList.add(new TestFoundConnector());
 
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, (observable, o) -> {
-        }, new Observable()));
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, object -> {
+        }, new TestListenable<>()));
 
         IConnector connector = null;
         try {
@@ -61,8 +62,8 @@ class RobotSearchTaskTests {
         connectorList.add(new TestFoundConnector());
         connectorList.add(new TestFoundConnector());
 
-        TestObserverObservable testObserverObservable = new TestObserverObservable();
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, testObserverObservable, testObserverObservable));
+        TestListenerListenable testListenerListenable = new TestListenerListenable();
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, testListenerListenable, testListenerListenable));
 
         IConnector connector = null;
         try {
@@ -81,8 +82,7 @@ class RobotSearchTaskTests {
         connectorList.add(new TestNotFoundConnector());
         connectorList.add(new TestNotFoundConnector());
 
-        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, (observable, o) -> {
-        }, new Observable()));
+        Future<IConnector> robotSearchFuture = this.executorService.submit(new RobotSearchTask(connectorList, object -> {}, new TestListenable<>()));
 
         IConnector connector = null;
         try {
@@ -94,83 +94,24 @@ class RobotSearchTaskTests {
         assertThat(connector, is(nullValue()));
     }
 
-    private static class TestObserverObservable extends Observable implements Observer {
-        @Override
-        public void update(Observable observable, Object o) {
-            if ( observable instanceof RobotSearchTask ) {
-                if ( o instanceof List ) {
-                    List<?> connectors = (List<?>) o;
-
-                    setChanged();
-                    notifyObservers(connectors.get(1));
-                }
-            }
-        }
-    }
-
-    private static class TestFoundConnector extends TestConnector {
+    private static class TestFoundConnector extends AbstractTestConnector {
         @Override
         public boolean findRobot() {
             return true;
         }
     }
 
-    private static class TestNotFoundConnector extends TestConnector {
+    private static class TestNotFoundConnector extends AbstractTestConnector {
         @Override
         public boolean findRobot() {
             return false;
         }
     }
 
-    private abstract static class TestConnector implements IConnector {
+    private static class TestListenerListenable extends TestListenable<IConnector> implements ORAListener<List<IConnector>> {
         @Override
-        public void userPressConnectButton() {
-
-        }
-
-        @Override
-        public void userPressDisconnectButton() {
-
-        }
-
-        @Override
-        public void close() {
-
-        }
-
-        @Override
-        public void notifyConnectionStateChanged(State state) {
-
-        }
-
-        @Override
-        public String getToken() {
-            return null;
-        }
-
-        @Override
-        public String getBrickName() {
-            return null;
-        }
-
-        @Override
-        public void update() {
-
-        }
-
-        @Override
-        public void updateCustomServerAddress(String customServerAddress) {
-
-        }
-
-        @Override
-        public void resetToDefaultServerAddress() {
-
-        }
-
-        @Override
-        public Boolean call() throws Exception {
-            return null;
+        public void update(List<IConnector> object) {
+            fire(object.get(1));
         }
     }
 }
