@@ -41,6 +41,11 @@ class RobotDetectorHelper implements IOraListener<Robot> {
 
     @Override
     public void update(Robot object) {
-        this.selectedRobot = object;
+        boolean robotInDetectors = this.detectors.stream().anyMatch(iDetector -> iDetector.getRobot() == object);
+        if (robotInDetectors) {
+            this.selectedRobot = object;
+        } else {
+            throw new IllegalStateException("Robot of this type was not registered with this helper!");
+        }
     }
 }

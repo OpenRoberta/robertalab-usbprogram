@@ -1,7 +1,5 @@
-package de.fhg.iais.roberta;
+package de.fhg.iais.roberta.util;
 
-import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.OraTokenGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 
@@ -52,5 +50,18 @@ class UtilsTests {
         } catch ( Exception e ) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    void getProperty_ShouldReturnProperty_WhenORPropsWereLoaded() {
+        PropertyHelper instance = PropertyHelper.getInstance();
+
+        assertThat(instance, notNullValue());
+
+        String groupId = instance.getProperty("groupId");
+        assertThat(groupId, is("de.fhg.iais.roberta"));
+
+        String artifactId = instance.getProperty("artifactId");
+        assertThat(artifactId, is("OpenRobertaUSB"));
     }
 }

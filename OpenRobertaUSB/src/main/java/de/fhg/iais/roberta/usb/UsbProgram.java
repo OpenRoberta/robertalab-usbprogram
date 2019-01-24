@@ -6,6 +6,7 @@ import de.fhg.iais.roberta.connection.arduino.ArduinoDetector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Connector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Detector;
 import de.fhg.iais.roberta.ui.MainController;
+import de.fhg.iais.roberta.util.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,6 @@ import java.util.ResourceBundle;
 class UsbProgram {
     private static final Logger LOG = LoggerFactory.getLogger(UsbProgram.class);
 
-    private static final String MESSAGES_BUNDLE = "messages";
     private static final long TIMEOUT = 1000L;
 
     private final MainController controller;
@@ -28,7 +28,7 @@ class UsbProgram {
     private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.ev3Detector, this.arduinoDetector));
 
     UsbProgram() {
-        ResourceBundle messages = ResourceBundle.getBundle(MESSAGES_BUNDLE, Locale.getDefault());
+        ResourceBundle messages = ResourceBundle.getBundle(PropertyHelper.getInstance().getProperty("messagesBundle"), Locale.getDefault());
         LOG.info("Using locale {}", (messages.getLocale().getLanguage().isEmpty()) ? "default en" : messages.getLocale());
 
         this.controller = new MainController(messages);
