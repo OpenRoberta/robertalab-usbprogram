@@ -47,10 +47,15 @@ public interface IConnector extends IOraListenable<State> {
     String CMD_DOWNLOAD_RUN = "download_run";
     String CMD_CONFIGURATION = "configuration";
 
-    // TODO document
+    /**
+     * Runs this connector.
+     * Starts the main loop to communicate with the server and the robot.
+     */
     void run();
 
-    // TODO document
+    /**
+     * Interrupts the main loop of the connector.
+     */
     void interrupt();
 
     /**

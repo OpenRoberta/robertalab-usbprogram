@@ -7,6 +7,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+/**
+ * Combined interface for UI listeners. Provides default implementations for all of the events.
+ * Inheritors only need to override the specific events that are needed.
+ */
 public interface IOraUiListener extends WindowListener, ActionListener, ListSelectionListener {
     @Override
     default void actionPerformed(ActionEvent e) {}
