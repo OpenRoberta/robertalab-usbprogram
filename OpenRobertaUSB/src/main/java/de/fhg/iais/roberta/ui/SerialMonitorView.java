@@ -4,7 +4,6 @@ import de.fhg.iais.roberta.util.IOraUiListener;
 
 import javax.swing.Box;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -17,7 +16,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ResourceBundle;
 
-public class SerialMonitorView extends JFrame {
+class SerialMonitorView extends JFrame {
     private final JTextArea textArea = new JTextArea();
     private final JScrollPane scrollPane = new JScrollPane(this.textArea,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -26,9 +25,9 @@ public class SerialMonitorView extends JFrame {
     private final JPanel options = new JPanel();
     private final JComboBox<Integer> rateSelection = new JComboBox<>(
         new Integer[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200 });
-    private final JButton clearButton = new JButton();
+    private final OraButton clearButton = new OraButton();
 
-    public SerialMonitorView(ResourceBundle messages, IOraUiListener listener) {
+    SerialMonitorView(ResourceBundle messages, IOraUiListener listener) {
         // General
         this.setSize(700, 500);
         this.setLocationRelativeTo(null);
@@ -60,17 +59,17 @@ public class SerialMonitorView extends JFrame {
         this.clearButton.addActionListener(listener);
     }
 
-    public int getSerialRate() {
+    int getSerialRate() {
         Object selected = this.rateSelection.getSelectedItem();
         return (selected != null) ? (int) selected : 0;
     }
 
-    public void appendText(byte[] bytes) {
+    void appendText(byte[] bytes) {
         this.textArea.append(new String(bytes));
         this.textArea.setCaretPosition(this.textArea.getDocument().getLength());
     }
 
-    public void clearText() {
+    void clearText() {
         this.textArea.setText("");
     }
 }

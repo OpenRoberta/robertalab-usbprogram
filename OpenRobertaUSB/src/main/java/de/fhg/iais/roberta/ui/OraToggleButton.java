@@ -5,17 +5,13 @@ import javax.swing.ButtonModel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.Color;
 import java.awt.Font;
 
-public class OraToggleButton extends JToggleButton {
-
+class OraToggleButton extends JToggleButton {
     private static final long serialVersionUID = 1L;
 
-    public OraToggleButton() {
-
+    OraToggleButton() {
         this.setBackground(Color.decode("#afca04"));
         this.setFont(new Font("Arial", Font.PLAIN, 16));
         this.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
@@ -23,16 +19,12 @@ public class OraToggleButton extends JToggleButton {
         this.setRolloverEnabled(true);
         UIManager.put("ToggleButton.select", Color.decode("#afca04"));
         SwingUtilities.updateComponentTreeUI(this);
-        this.getModel().addChangeListener(new ChangeListener() {
-
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                ButtonModel b = (ButtonModel) e.getSource();
-                if ( b.isRollover() ) {
-                    setBackground(Color.decode("#b7d032"));
-                } else {
-                    setBackground(Color.decode("#afca04"));
-                }
+        this.getModel().addChangeListener(e -> {
+            ButtonModel b = (ButtonModel) e.getSource();
+            if ( b.isRollover() ) {
+                setBackground(Color.decode("#b7d032"));
+            } else {
+                setBackground(Color.decode("#afca04"));
             }
         });
     }
