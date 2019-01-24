@@ -9,7 +9,6 @@ import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JList;
 import javax.swing.event.ListSelectionEvent;
@@ -33,6 +32,7 @@ public class MainController implements IController, IOraListenable<Robot> {
     private final ResourceBundle rb;
     private final MainView mainView;
 
+    // For the robot selection if there is more than one robot available
     private List<Robot> robotList = null;
 
     private boolean connected;
@@ -40,15 +40,13 @@ public class MainController implements IController, IOraListenable<Robot> {
     private IConnector connector = null;
 
     // Child controllers of the main controller, this includes other windows/JFrames that are launched from the main controller
-    private final SerialMonitorController serialMonitorController;
+    private SerialMonitorController serialMonitorController = null;
 
     public MainController(ResourceBundle rb) {
         this.mainView = new MainView(rb, new MainViewListener());
         this.mainView.setVisible(true);
         this.rb = rb;
         this.connected = false;
-
-        this.serialMonitorController = new SerialMonitorController(rb);
     }
 
     public void setRobotList(List<Robot> robotList) {
@@ -56,8 +54,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.mainView.showRobotList(this.robotList.stream().map(Enum::toString).collect(Collectors.toList()));
     }
 
+    @Override
     public void setState(State state) {
-        LOG.info("setState {}", state);
+        LOG.info("setState: {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 this.connected = false;
@@ -81,49 +80,47 @@ public class MainController implements IController, IOraListenable<Robot> {
                 this.mainView.setWaitForCmd();
                 break;
             case DISCOVER:
-                this.setDiscover();
+                setDiscover();
                 break;
             case WAIT_EXECUTION:
                 this.mainView.setWaitExecution();
                 break;
             case UPDATE_SUCCESS:
-                this.showAttentionPopup("restartInfo");
+                showAttentionPopup("restartInfo", "");
                 break;
             case UPDATE_FAIL:
-                this.showAttentionPopup("updateFail");
+                showAttentionPopup("updateFail", "");
                 break;
             case ERROR_HTTP:
-                this.showAttentionPopup("httpErrorInfo");
+                showAttentionPopup("httpErrorInfo", "");
                 break;
             case ERROR_DOWNLOAD:
-                this.showAttentionPopup("downloadFail");
+                showAttentionPopup("downloadFail", "");
                 break;
             case ERROR_BRICK:
-                this.showAttentionPopup("httpBrickInfo");
+                showAttentionPopup("httpBrickInfo", "");
                 break;
             case TOKEN_TIMEOUT:
-                this.showAttentionPopup("tokenTimeout");
+                showAttentionPopup("tokenTimeout", "");
                 break;
             default:
                 break;
         }
     }
 
+    @Override
     public void setConnector(IConnector connector) {
-        LOG.debug("setConnector");
+        LOG.info("setConnector: {}", connector.getRobot());
         this.connector = connector;
         this.connector.registerListener(this::setState);
 
         this.mainView.hideRobotList();
 
-        LOG.info("GUI setup done. Using {}", connector.getClass().getSimpleName());
-
-        this.serialMonitorController.setConnector(connector);
-
-        // TODO?
-        connector.run();
-
-        this.connector.unregisterListener(this::setState);
+        // Serial monitor is only needed for arduino based robots
+        if (connector.getRobot() == Robot.ARDUINO) {
+            this.serialMonitorController = new SerialMonitorController(this.rb);
+            this.serialMonitorController.setConnector(connector);
+        }
     }
 
     public void showConfigErrorPopup(Map<Integer, String> errors) {
@@ -132,9 +129,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         for ( Entry<Integer, String> entry : errors.entrySet() ) {
             sb.append("Line ").append(entry.getKey()).append(": ").append(this.rb.getString(entry.getValue())).append(System.lineSeparator());
         }
-        LOG.error("Something went wrong when loading the arduino id file:{}", sb);
+        LOG.error("Errors in config file:{}", sb);
 
-        OraPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString("errorReadConfig") + sb, null);
+        showAttentionPopup("errorReadConfig", sb.toString());
     }
 
     private void setDiscover() {
@@ -143,64 +140,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.mainView.setDiscover();
     }
 
-    private void checkForValidCustomServerAddressAndUpdate() {
-        LOG.debug("checkForValidCustomServerAddressAndUpdate");
-        if ( this.mainView.isCustomAddressSelected() ) {
-            String ip = this.mainView.getCustomIP();
-            String port = this.mainView.getCustomPort();
-            if ( ip.isEmpty() ) {
-                LOG.info("Invalid custom address (null or empty) - Using default address");
-                this.connector.resetToDefaultServerAddress();
-            } else {
-                if ( port.isEmpty() ) {
-                    LOG.info("Valid custom ip {}, using default ports", ip);
-                    this.connector.updateCustomServerAddress(ip);
-                } else {
-                    String address = ip + ':' + port;
-                    LOG.info("Valid custom address {}", address);
-                    this.connector.updateCustomServerAddress(address);
-                }
-            }
-        } else {
-            this.connector.resetToDefaultServerAddress();
-        }
-    }
-
-    private void closeApplication() {
-        LOG.debug("closeApplication");
-        if ( this.connected ) {
-            String[] buttons = {
-                this.rb.getString("close"), this.rb.getString("cancel")
-            };
-            int n = OraPopup.showPopup(
-                this.mainView,
-                this.rb.getString("attention"),
-                this.rb.getString("confirmCloseInfo"),
-                new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
-                buttons);
-            if ( n == 0 ) {
-                if ( this.connector != null ) {
-                    this.connector.close();
-                }
-                System.exit(0);
-            }
-        } else {
-            System.exit(0);
-        }
-    }
-
-    private void showAttentionPopup(String key) {
+    private void showAttentionPopup(String key, String additionalInfo) {
         OraPopup.showPopup(this.mainView, this.rb.getString("attention"),
-            this.rb.getString(key), null);
-    }
-
-    private void showAboutPopup() {
-        OraPopup.showPopup(
-            this.mainView,
-            this.rb.getString("about"),
-            this.rb.getString("aboutInfo"),
-            new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
-                .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+            this.rb.getString(key) + additionalInfo, null);
     }
 
     @Override
@@ -223,50 +165,98 @@ public class MainController implements IController, IOraListenable<Robot> {
     private class MainViewListener implements IOraUiListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            AbstractButton button = (AbstractButton) e.getSource();
-            if ( button.getActionCommand().equals("close") ) {
-                LOG.debug("User close");
-                closeApplication();
-            } else if ( button.getActionCommand().equals("about") ) {
-                LOG.debug("User about");
-                showAboutPopup();
-            } else if ( button.getActionCommand().equals("customaddress") ) {
-                LOG.debug("User custom address");
-                MainController.this.mainView.showAdvancedOptions();
-            } else if ( button.getActionCommand().equals("scan") ) {
-                LOG.debug("User scan");
-                MainController.this.connector.interrupt();
-                setDiscover();
-            } else if ( button.getActionCommand().equals("serial")) {
-                LOG.debug("User serial");
-                MainController.this.serialMonitorController.showSerialMonitor();
-            } else {
-                if ( button.isSelected() ) {
-                    LOG.debug("User connect");
-                    if ( MainController.this.connector != null ) { //TODO
-                        checkForValidCustomServerAddressAndUpdate();
-                        MainController.this.connector.userPressConnectButton();
-                    }
-                } else {
-                    LOG.debug("User disconnect");
-                    if ( MainController.this.connector != null ) {
-                        MainController.this.connector.userPressDisconnectButton();
-                    }
-                }
+            LOG.info("actionPerformed: {}", e.getActionCommand());
+            switch ( e.getActionCommand() ) {
+                case "close":
+                    closeApplication();
+                    break;
+                case "about":
+                    showAboutPopup();
+                    break;
+                case "customaddress":
+                    MainController.this.mainView.showAdvancedOptions();
+                    break;
+                case "scan":
+                    MainController.this.connector.interrupt();
+                    setDiscover();
+                    break;
+                case "serial":
+                    MainController.this.serialMonitorController.showSerialMonitor();
+                    break;
+                case "connect":
+                    checkForValidCustomServerAddressAndUpdate();
+                    MainController.this.connector.userPressConnectButton();
+                    break;
+                case "disconnect":
+                    MainController.this.connector.userPressDisconnectButton();
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Action " + e.getActionCommand() + " is not implemented!");
             }
         }
 
         @Override
         public void windowClosing(WindowEvent e) {
-            LOG.debug("User close");
+            LOG.info("windowClosing");
             closeApplication();
         }
 
+        // Sends event to all listeners waiting for the robot selection event when a robot was selected
         @Override
         public void valueChanged(ListSelectionEvent e) {
+            LOG.info("valueChanged: {}", e.getFirstIndex());
             JList<?> source = (JList<?>) e.getSource();
             source.clearSelection();
             fire(MainController.this.robotList.get(e.getFirstIndex()));
+        }
+
+        private void showAboutPopup() {
+            OraPopup.showPopup(MainController.this.mainView, MainController.this.rb.getString("about"), MainController.this.rb.getString("aboutInfo"),
+                new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
+                    .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+        }
+
+        private void checkForValidCustomServerAddressAndUpdate() {
+            LOG.debug("checkForValidCustomServerAddressAndUpdate");
+            if ( MainController.this.mainView.isCustomAddressSelected() ) {
+                String ip = MainController.this.mainView.getCustomIP();
+                String port = MainController.this.mainView.getCustomPort();
+                if ( ip.isEmpty() ) {
+                    LOG.info("Invalid custom address (null or empty) - Using default address");
+                    MainController.this.connector.resetToDefaultServerAddress();
+                } else {
+                    if ( port.isEmpty() ) {
+                        LOG.info("Valid custom ip {}, using default ports", ip);
+                        MainController.this.connector.updateCustomServerAddress(ip);
+                    } else {
+                        String address = ip + ':' + port;
+                        LOG.info("Valid custom address {}", address);
+                        MainController.this.connector.updateCustomServerAddress(address);
+                    }
+                }
+            } else {
+                MainController.this.connector.resetToDefaultServerAddress();
+            }
+        }
+
+        private void closeApplication() {
+            LOG.debug("closeApplication");
+            if ( MainController.this.connected ) {
+                String[] buttons = {
+                    MainController.this.rb.getString("close"), MainController.this.rb.getString("cancel")
+                };
+                int n = OraPopup.showPopup(MainController.this.mainView, MainController.this.rb.getString("attention"), MainController.this.rb.getString("confirmCloseInfo"),
+                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
+                    buttons);
+                if ( n == 0 ) {
+                    if ( MainController.this.connector != null ) {
+                        MainController.this.connector.close();
+                    }
+                    System.exit(0);
+                }
+            } else {
+                System.exit(0);
+            }
         }
     }
 }

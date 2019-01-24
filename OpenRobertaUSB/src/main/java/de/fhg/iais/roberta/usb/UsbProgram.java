@@ -1,5 +1,6 @@
 package de.fhg.iais.roberta.usb;
 
+import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoDetector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Connector;
@@ -60,21 +61,24 @@ class UsbProgram {
                 }
             }
 
-            // Start the appropriate connector depending on the robot
+            // Create the appropriate connector depending on the robot
+            IConnector connector;
             switch ( selectedRobot ) {
                 case EV3:
-                    this.controller.setConnector(new Ev3Connector());
+                    connector = new Ev3Connector();
                     break;
                 case ARDUINO:
                     Map<Integer, String> errors = this.arduinoDetector.getReadIdFileErrors();
                     if ( !errors.isEmpty() ) {
                         this.controller.showConfigErrorPopup(errors);
                     }
-                    this.controller.setConnector(new ArduinoConnector(this.arduinoDetector.getType(), this.arduinoDetector.getPortName()));
+                    connector = new ArduinoConnector(this.arduinoDetector.getType(), this.arduinoDetector.getPortName());
                     break;
                 default:
-                    break;
+                    throw new UnsupportedOperationException("Selected robot not supported!");
             }
+            this.controller.setConnector(connector);
+            connector.run(); // Blocking until the connector is finished
         }
     }
 }

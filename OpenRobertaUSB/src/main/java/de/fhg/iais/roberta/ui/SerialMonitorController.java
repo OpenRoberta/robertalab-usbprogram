@@ -24,7 +24,7 @@ public class SerialMonitorController implements IController {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Future<Void> serialLoggingFuture = null;
 
-    private IConnector connector = null;
+    private String portName = null;
 
     SerialMonitorController(ResourceBundle rb) {
         this.serialMonitorView = new SerialMonitorView(rb, new SerialMonitorViewListener());
@@ -34,12 +34,14 @@ public class SerialMonitorController implements IController {
 
     @Override
     public void setConnector(IConnector connector) {
-        this.connector = connector;
-        this.connector.registerListener(this::setState);
+        LOG.debug("setConnector: {}", connector.getRobot());
+        connector.registerListener(this::setState);
+        this.portName = ((ArduinoConnector) connector).getPortName();
     }
 
     @Override
     public void setState(State state) {
+        LOG.debug("setState: {}", state);
         switch ( state ) {
             case WAIT_UPLOAD:
                 this.stopSerialLogging();
@@ -66,11 +68,8 @@ public class SerialMonitorController implements IController {
         LOG.debug("restartSerialLogging");
         stopSerialLogging();
 
-        // TODO improve, only start if its an arduinoconnector
-        if ( this.connector instanceof ArduinoConnector ) {
-            this.serialLoggingFuture =
-                this.executorService.submit(new SerialLoggingTask(this::appendSerial, ((ArduinoConnector) this.connector).getPortName(), this.serialMonitorView.getSerialRate()));
-        }
+        this.serialLoggingFuture =
+            this.executorService.submit(new SerialLoggingTask(this::appendSerial, this.portName, this.serialMonitorView.getSerialRate()));
     }
 
     private void appendSerial(byte[] readBuffer) {
@@ -82,20 +81,28 @@ public class SerialMonitorController implements IController {
             this.serialLoggingFuture.cancel(true);
         }
     }
+
     private class SerialMonitorViewListener implements IOraUiListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            LOG.debug("ActionEvent {}", e.getActionCommand());
-            if ( e.getActionCommand().equals("comboBoxChanged") ) {
-                restartSerialLogging();
-                SerialMonitorController.this.serialMonitorView.clearText();
-            } else if ( e.getActionCommand().equals("clear") ) {
-                SerialMonitorController.this.serialMonitorView.clearText();
+            LOG.info("actionPerformed: {}", e.getActionCommand());
+
+            switch ( e.getActionCommand() ) {
+                case "comboBoxChanged":
+                    restartSerialLogging();
+                    SerialMonitorController.this.serialMonitorView.clearText();
+                    break;
+                case "clear":
+                    SerialMonitorController.this.serialMonitorView.clearText();
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Action " + e.getActionCommand() + " is not implemented!");
             }
         }
 
         @Override
         public void windowClosing(WindowEvent e) {
+            LOG.info("windowClosing");
             stopSerialLogging();
         }
     }
