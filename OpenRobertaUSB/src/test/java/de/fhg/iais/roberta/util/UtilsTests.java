@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.util;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,7 +12,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 class UtilsTests {
     @Test
@@ -37,19 +35,6 @@ class UtilsTests {
             .collect(Collectors.toSet());
 
         assertThat(duplicates, empty());
-    }
-
-    // TODO implement properly on Windows
-    @EnabledOnOs(WINDOWS)
-    @Test
-    void getWMIValue_ShouldReturnQueryResult_WhenGivenQueryAndField() {
-        try {
-            String result = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity", "Caption");
-
-            assertThat(result, is(notNullValue()));
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
     }
 
     @Test

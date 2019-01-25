@@ -2,12 +2,15 @@ linux/OR.png
 linux/arduino-ids.txt
 linux/install.sh
 linux/resources/
+*.tar.gz
 osx/Info.plist
 osx/arduino-ids.txt
 osx/resources
 osx/start.sh
 osx/package/Distribution
 osx/package/ORUSB.pkg/
+*.pkg
 windows/arduino-ids.txt
 windows/resources
 windows/setup.wxs
+*.msi

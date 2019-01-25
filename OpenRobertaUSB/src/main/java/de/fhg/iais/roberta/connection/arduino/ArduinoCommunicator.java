@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 
 class ArduinoCommunicator {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoCommunicator.class);
@@ -86,7 +87,7 @@ class ArduinoCommunicator {
 
             //            processBuilder.redirectInput(Redirect.INHERIT);
             //            processBuilder.redirectOutput(Redirect.INHERIT);
-            //            processBuilder.redirectError(Redirect.INHERIT);
+            processBuilder.redirectError(Redirect.INHERIT);
 
             Process p = processBuilder.start();
             int eCode = p.waitFor();

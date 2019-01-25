@@ -1,9 +1,10 @@
-package de.fhg.iais.roberta.ui;
+package de.fhg.iais.roberta.ui.serialMonitor;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
 import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
+import de.fhg.iais.roberta.ui.IController;
 import de.fhg.iais.roberta.util.IOraUiListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class SerialMonitorController implements IController {
 
     private String portName = null;
 
-    SerialMonitorController(ResourceBundle rb) {
+    public SerialMonitorController(ResourceBundle rb) {
         this.serialMonitorView = new SerialMonitorView(rb, new SerialMonitorViewListener());
 
         this.serialMonitorView.setVisible(false);
@@ -56,7 +57,7 @@ public class SerialMonitorController implements IController {
         }
     }
 
-    void showSerialMonitor() {
+    public void showSerialMonitor() {
         LOG.debug("showSerialMonitor");
 
         this.serialMonitorView.setVisible(true);

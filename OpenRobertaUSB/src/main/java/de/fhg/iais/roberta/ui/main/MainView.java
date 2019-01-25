@@ -1,12 +1,36 @@
-package de.fhg.iais.roberta.ui;
+package de.fhg.iais.roberta.ui.main;
 
+import de.fhg.iais.roberta.ui.OraButton;
+import de.fhg.iais.roberta.ui.OraToggleButton;
 import de.fhg.iais.roberta.util.IOraUiListener;
 import de.fhg.iais.roberta.util.Pair;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.BorderLayout;
@@ -16,66 +40,103 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowListener;
-import java.net.URL;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
+
+import static de.fhg.iais.roberta.ui.main.RobotButton.State.CONNECTED;
+import static de.fhg.iais.roberta.ui.main.RobotButton.State.DISCOVERED;
+import static de.fhg.iais.roberta.ui.main.RobotButton.State.NOT_DISCOVERED;
 
 public class MainView extends JFrame {
     private static final Logger LOG = LoggerFactory.getLogger(MainView.class);
 
     private static final long serialVersionUID = 1L;
-    private static final int WIDTH = 320;
+    private static final int WIDTH = 330;
     private static final int HEIGHT = 500;
     private static final int ADVANCED_HEIGHT = 562;
 
-    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
-    
-    // General setup for the UI colors and fonts
+    static final String CMD_EXIT = "exit";
+    static final String CMD_ABOUT = "about";
+    static final String CMD_SERIAL = "serial";
+    static final String CMD_SCAN = "scan";
+    static final String CMD_CUSTOMADDRESS = "customaddress";
+    static final String CMD_CONNECT = "connect";
+    static final String CMD_DISCONNECT = "disconnect";
+    static final String CMD_HELP = "help";
+    static final String CMD_ID_EDITOR = "id_editor";
+
+    public static final String IMAGES_PATH = "images/";
+
+    private static final Color BUTTON_FOREGROUND_COLOR = Color.WHITE;
+    public static final Color BUTTON_BACKGROUND_COLOR = Color.decode("#b7d032"); // light lime green
+    public static final Color HOVER_COLOR = Color.decode("#afca04"); // slightly darker lime green
+    public static final Color BACKGROUND_COLOR = Color.WHITE;
+    public static final Color TABLE_HEADER_BACKGROUND_COLOR = Color.decode("#dddddd");
+
+    private static final Font FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+    private static final Font MENU_FONT = FONT.deriveFont(12.0f);
+
     static {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch ( ClassNotFoundException | IllegalAccessException | UnsupportedLookAndFeelException | InstantiationException e ) {
             LOG.error("Error when setting up the look and feel: {}", e.getMessage());
         }
-        UIManager.put("MenuBar.background", Color.white);
-        UIManager.put("Menu.background", Color.white);
-        UIManager.put("Menu.selectionBackground", Color.decode("#afca04"));
-        UIManager.put("Menu.foreground", Color.decode("#333333"));
-        UIManager.put("Menu.font", font.deriveFont(12.0f));
-        UIManager.put("MenuItem.background", Color.white);
-        UIManager.put("MenuItem.selectionBackground", Color.decode("#afca04"));
-        UIManager.put("MenuItem.foreground", Color.decode("#333333"));
-        UIManager.put("MenuItem.font", font.deriveFont(12.0f));
-        UIManager.put("MenuItem.focus", Color.decode("#afca04"));
-        UIManager.put("Panel.background", Color.white);
-        UIManager.put("CheckBox.background", Color.white);
+        UIManager.put("MenuBar.background", BACKGROUND_COLOR);
+        UIManager.put("Menu.background", BACKGROUND_COLOR);
+        UIManager.put("Menu.selectionBackground", BUTTON_BACKGROUND_COLOR);
+        UIManager.put("Menu.font", MENU_FONT);
+        UIManager.put("MenuItem.background", BACKGROUND_COLOR);
+        UIManager.put("MenuItem.selectionBackground", BUTTON_BACKGROUND_COLOR);
+        UIManager.put("MenuItem.font", MENU_FONT);
+        UIManager.put("Panel.background", BACKGROUND_COLOR);
+        UIManager.put("CheckBox.background", BACKGROUND_COLOR);
         UIManager.put("Separator.foreground", Color.decode("#dddddd"));
-        UIManager.put("TextField.background", Color.white);
-        UIManager.put("TextField.font", font);
-        UIManager.put("TextArea.font", font);
-        UIManager.put("Label.font", font);
-        UIManager.put("List.font", font);
-        UIManager.put("Button.font", font);
-        UIManager.put("ComboBox.font", font);
-        UIManager.put("ComboBox.buttonBackground", Color.decode("#dddddd"));
-        UIManager.put("ComboBox.buttonShadow", Color.decode("#afca04"));
-        UIManager.put("ComboBox.buttonDarkShadow", Color.decode("#afca04"));
-        UIManager.put("ComboBox.buttonHighlight", Color.decode("#dddddd"));
-        UIManager.put("ComboBox.background", Color.white);
-        UIManager.put("ComboBox.disabledBackground", Color.white);
-        UIManager.put("ComboBox.disabledForeground", Color.white);
+        UIManager.put("TextField.background", BACKGROUND_COLOR);
+        UIManager.put("TextField.font", FONT);
+        UIManager.put("TextArea.font", FONT);
+        UIManager.put("Label.font", FONT);
+        UIManager.put("List.font", FONT);
+        UIManager.put("Button.font", FONT);
+        UIManager.put("Button.rollover", true);
+        UIManager.put("Button.background", BUTTON_BACKGROUND_COLOR);
+        UIManager.put("Button.foreground", BUTTON_FOREGROUND_COLOR);
+        UIManager.put("Button.border", BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        UIManager.put("ToggleButton.font", FONT);
+        UIManager.put("ToggleButton.rollover", true);
+        UIManager.put("ToggleButton.background", BUTTON_BACKGROUND_COLOR);
+        UIManager.put("ToggleButton.foreground", BUTTON_FOREGROUND_COLOR);
+        UIManager.put("ToggleButton.border", BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        UIManager.put("OptionPane.background", BACKGROUND_COLOR);
+        UIManager.put("OptionPane.messageFont", FONT);
+        UIManager.put("ToolTip.background", BACKGROUND_COLOR);
+        UIManager.put("ToolTip.font", FONT);
+        UIManager.put("EditorPane.font", FONT);
+        UIManager.put("Button.font", FONT);
+        UIManager.put("ComboBox.font", FONT);
+        UIManager.put("ComboBox.background", BACKGROUND_COLOR);
+        UIManager.put("ComboBox.disabledBackground", BACKGROUND_COLOR);
+        UIManager.put("ComboBox.disabledForeground", BACKGROUND_COLOR);
         UIManager.put("ComboBox.selectionBackground", Color.decode("#dddddd"));
+        UIManager.put("Table.font", FONT);
+        UIManager.put("Table.alternateRowColor", new Color(240, 240, 240));
+        UIManager.put("TableHeader.font", FONT);
+        UIManager.put("TableHeader.background", TABLE_HEADER_BACKGROUND_COLOR);
+        UIManager.put("ScrollPane.background", BACKGROUND_COLOR);
 
         // CMD + C support for copying on Mac OS
-        if (SystemUtils.IS_OS_MAC_OSX) {
+        if ( SystemUtils.IS_OS_MAC_OSX) {
             InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
         }
     }
 
@@ -83,16 +144,16 @@ public class MainView extends JFrame {
     private final JMenuBar menu = new JMenuBar();
 
     private final JMenu menuFile = new JMenu();
-
+    private final JMenuItem menuItemIdEditor = new JMenuItem();
     private final JMenuItem menuItemClose = new JMenuItem();
-
-    private final JMenu menuInfo = new JMenu();
-    private final JMenuItem menuItemAbout = new JMenuItem();
 
     private final JMenu menuArduino = new JMenu();
     private final JMenuItem menuItemSerial = new JMenuItem();
 
-    private final JLabel lblRobot = new JLabel();
+    private final JMenu menuInfo = new JMenu();
+    private final JMenuItem menuItemAbout = new JMenuItem();
+
+    private final RobotButton butRobot = new RobotButton();
 
     // Center panel
     private final JPanel pnlCenter = new JPanel();
@@ -129,25 +190,21 @@ public class MainView extends JFrame {
     private final JComboBox<String> cmbBoxCustomPort = new JComboBox<>();
 
     // Resources
+    public static final ImageIcon ICON_TITLE = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "OR.png")));
+    private static final Icon GIF_PLUG = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "plug.gif")));
+    private static final Icon GIF_CONNECT = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "connect.gif")));
+    private static final Icon GIF_SERVER = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "server.gif")));
+    private static final Icon GIF_CONNECTED = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "connected.gif")));
+    private static final Icon ARROW_DOWN = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-down.png")));
+    private static final Icon ARROW_UP = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-up.png")));
     private final ResourceBundle messages;
-    private ImageIcon icoTitle;
-    private ImageIcon icoRobotNotDiscovered;
-    private ImageIcon icoRobotConnected;
-    private ImageIcon icoRobotDiscovered;
-    private ImageIcon gifPlug;
-    private ImageIcon gifConnect;
-    private ImageIcon gifServer;
-    private ImageIcon gifConnected;
-    private ImageIcon arrowDown;
-    private ImageIcon arrowUp;
 
     private boolean toggle = true;
     private boolean customMenuVisible = false;
 
-    public MainView(ResourceBundle messages, IOraUiListener listener) {
+    MainView(ResourceBundle messages, IOraUiListener listener) {
         this.messages = messages;
 
-        this.createIcons();
         this.initGUI();
         this.setDiscover();
 
@@ -164,7 +221,7 @@ public class MainView extends JFrame {
         this.setLocationRelativeTo(null);
 
         // Titlebar
-        this.setIconImage(this.icoTitle.getImage());
+        this.setIconImage(ICON_TITLE.getImage());
         this.setTitle(this.messages.getString("title"));
     }
 
@@ -176,29 +233,33 @@ public class MainView extends JFrame {
         // File
         this.menu.add(this.menuFile);
         this.menuFile.setText(this.messages.getString("file"));
+        this.menuFile.add(this.menuItemIdEditor);
+        this.menuItemIdEditor.setText(this.messages.getString("idEditor"));
+        this.menuItemIdEditor.setActionCommand(CMD_ID_EDITOR);
         this.menuFile.add(this.menuItemClose);
-        this.menuItemClose.setText(this.messages.getString("close"));
-        this.menuItemClose.setActionCommand("close");
+        this.menuItemClose.setText(this.messages.getString("exit"));
+        this.menuItemClose.setActionCommand(CMD_EXIT);
+
+        // Arduino
+        this.menu.add(this.menuArduino);
+        this.menuArduino.setText("Arduino");
+        this.menuArduino.add(this.menuItemSerial);
+        this.menuItemSerial.setText(this.messages.getString("serialMonitor"));
+        this.menuItemSerial.setActionCommand(CMD_SERIAL);
 
         // Info
         this.menu.add(this.menuInfo);
         this.menuInfo.setText(this.messages.getString("info"));
         this.menuInfo.add(this.menuItemAbout);
         this.menuItemAbout.setText(this.messages.getString("about"));
-        this.menuItemAbout.setActionCommand("about");
-
-        // Arduino
-        this.menu.add(this.menuArduino);
-        this.menuArduino.setText("Arduino");
-        this.menuArduino.add(this.menuItemSerial);
-        this.menuItemSerial.setText("Serial Monitor");
-        this.menuItemSerial.setActionCommand("serial");
+        this.menuItemAbout.setActionCommand(CMD_ABOUT);
 
         this.menu.add(Box.createHorizontalGlue());
 
         // Icon
-        this.menu.add(this.lblRobot);
-        this.lblRobot.setIcon(this.icoRobotNotDiscovered);
+        this.menu.add(this.butRobot);
+        this.butRobot.setState(NOT_DISCOVERED);
+        this.butRobot.setActionCommand(CMD_HELP);
     }
 
     private void initCenterPanelGUI() {
@@ -225,7 +286,7 @@ public class MainView extends JFrame {
         this.pnlCenter.add(this.pnlToken);
 
         this.pnlToken.add(this.txtFldToken);
-        this.txtFldToken.setFont(font.deriveFont(18.0f));
+        this.txtFldToken.setFont(FONT.deriveFont(18.0f));
         this.txtFldToken.setBorder(BorderFactory.createEmptyBorder());
         this.txtFldToken.setEditable(false);
 
@@ -254,12 +315,12 @@ public class MainView extends JFrame {
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
         this.pnlButton.add(this.butScan);
         this.butScan.setText(this.messages.getString("scan"));
-        this.butScan.setActionCommand("scan");
+        this.butScan.setActionCommand(CMD_SCAN);
 
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
         this.pnlButton.add(this.butClose);
-        this.butClose.setText(this.messages.getString("close"));
-        this.butClose.setActionCommand("close");
+        this.butClose.setText(this.messages.getString("exit"));
+        this.butClose.setActionCommand(CMD_EXIT);
 
         this.pnlCenter.add(Box.createRigidArea(new Dimension(0, 20)));
     }
@@ -272,12 +333,13 @@ public class MainView extends JFrame {
 
         this.pnlCustomInfo.add(this.butCustom);
         this.butCustom.setActionCommand("customaddress");
-        this.butCustom.setIcon(this.arrowDown);
+        this.butCustom.setIcon(ARROW_DOWN);
         this.butCustom.setText(this.messages.getString("checkCustomDesc"));
         this.butCustom.setBorderPainted( false );
         this.butCustom.setBackground(Color.WHITE);
         this.butCustom.setFocusPainted(false);
         this.butCustom.setContentAreaFilled(false);
+        this.butCustom.setForeground(this.lblCustomIp.getForeground());
         this.butCustom.setMargin(new Insets(0,0,0,0));
 
         // Custom heading panel
@@ -297,19 +359,23 @@ public class MainView extends JFrame {
 
         this.pnlCustomAddress.add(this.lblCustomIp);
         this.lblCustomIp.setBorder(null);
-        this.lblCustomIp.setText(this.messages.getString("ip"));
+        this.lblCustomIp.setText(this.messages.getString("ip") + ':');
 
         this.pnlCustomAddress.add(this.cmbBoxCustomIp);
         this.cmbBoxCustomIp.setEditable(true);
         this.cmbBoxCustomIp.setPreferredSize(new Dimension(146, 25));
+        this.cmbBoxCustomIp.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        ((JComponent) this.cmbBoxCustomIp.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0,4,0,4));
 
         this.pnlCustomAddress.add(this.lblCustomPort);
         this.lblCustomPort.setBorder(null);
-        this.lblCustomPort.setText(this.messages.getString("port"));
+        this.lblCustomPort.setText(this.messages.getString("port") + ':');
 
         this.pnlCustomAddress.add(this.cmbBoxCustomPort);
         this.cmbBoxCustomPort.setEditable(true);
         this.cmbBoxCustomPort.setPreferredSize(new Dimension(70, 25));
+        this.cmbBoxCustomPort.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        ((JComponent) this.cmbBoxCustomPort.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0,4,0,4));
 
         this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
     }
@@ -336,9 +402,11 @@ public class MainView extends JFrame {
     }
 
     private void setActionListener(ActionListener listener) {
+        this.menuItemIdEditor.addActionListener(listener);
         this.menuItemClose.addActionListener(listener);
         this.menuItemAbout.addActionListener(listener);
         this.menuItemSerial.addActionListener(listener);
+        this.butRobot.addActionListener(listener);
         this.butConnect.addActionListener(listener);
         this.butScan.addActionListener(listener);
         this.butClose.addActionListener(listener);
@@ -353,79 +421,79 @@ public class MainView extends JFrame {
         this.listRobots.addListSelectionListener(listener);
     }
 
-    public void setWaitForConnect() {
-        this.lblRobot.setIcon(this.icoRobotDiscovered);
+    void setWaitForConnect() {
+        this.butRobot.setState(DISCOVERED);
         this.butConnect.setEnabled(true);
         this.butScan.setEnabled(true);
         this.txtAreaInfo.setText(this.messages.getString("connectInfo"));
-        this.lblMainGif.setIcon(this.gifConnect);
+        this.lblMainGif.setIcon(GIF_CONNECT);
     }
 
-    public void setWaitExecution() {
+    void setWaitExecution() {
         if ( this.toggle ) {
-            this.lblRobot.setIcon(this.icoRobotConnected);
+            this.butRobot.setState(CONNECTED);
         } else {
-            this.lblRobot.setIcon(this.icoRobotDiscovered);
+            this.butRobot.setState(DISCOVERED);
         }
         this.toggle = !this.toggle;
     }
 
-    public void setWaitForCmd() {
+    void setWaitForCmd() {
         this.butConnect.setText(this.messages.getString("disconnect"));
         this.butConnect.setEnabled(true);
         this.butConnect.setSelected(true);
-        this.butConnect.setActionCommand("disconnect");
-        this.lblRobot.setIcon(this.icoRobotConnected);
+        this.butConnect.setActionCommand(CMD_DISCONNECT);
+        this.butRobot.setState(CONNECTED);
         this.txtAreaInfo.setText(this.messages.getString("serverInfo"));
-        this.lblMainGif.setIcon(this.gifConnected);
+        this.lblMainGif.setIcon(GIF_CONNECTED);
     }
 
-    public void setDiscover() {
+    void setDiscover() {
         this.txtFldToken.setText("");
-        this.lblRobot.setIcon(this.icoRobotNotDiscovered);
+        this.butRobot.setState(NOT_DISCOVERED);
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
-        this.butConnect.setActionCommand("connect");
+        this.butConnect.setActionCommand(CMD_CONNECT);
         this.butScan.setEnabled(false);
         this.butScan.setSelected(false);
         this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
-        this.lblMainGif.setIcon(this.gifPlug);
+        this.lblMainGif.setIcon(GIF_PLUG);
         this.hideArduinoMenu();
     }
 
-    public void setWaitForServer() {
+    void setWaitForServer() {
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
     }
 
-    public void setNew(String token) {
+    void setNew(String token) {
         this.butScan.setEnabled(false);
         this.txtFldToken.setText(token);
         this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
-        this.lblMainGif.setIcon(this.gifServer);
+        this.lblMainGif.setIcon(GIF_SERVER);
     }
 
-    public void showRobotList(List<String> robotNames) {
+    void showRobotList(List<String> robotNames) {
         this.lblSelection.setVisible(true);
         this.listRobots.setVisible(true);
         this.listRobots.setListData(robotNames.toArray(new String[0]));
     }
 
-    public void hideRobotList() {
+    void hideRobotList() {
         this.lblSelection.setVisible(false);
         this.listRobots.setVisible(false);
     }
 
-    public void showArduinoMenu() {
+    void showArduinoMenu() {
         this.menuArduino.setVisible(true);
     }
 
-    public void hideArduinoMenu() {
+    private void hideArduinoMenu() {
         this.menuArduino.setVisible(false);
     }
 
-    public void setArduinoMenuText(String text) {
+    void setArduinoMenuText(String text) {
         this.menuArduino.setText(text);
     }
 
@@ -434,20 +502,19 @@ public class MainView extends JFrame {
             this.setSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.showCustom();
-            this.revalidate();
-            this.butCustom.setIcon(this.arrowUp);
+            this.butCustom.setIcon(ARROW_UP);
             this.customMenuVisible = true;
         } else {
             this.setSize(new Dimension(WIDTH, HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
             this.hideCustom();
-            this.revalidate();
-            this.butCustom.setIcon(this.arrowDown);
+            this.butCustom.setIcon(ARROW_DOWN);
             this.customMenuVisible = false;
         }
+        this.revalidate();
     }
 
-    public void setConnectButtonText(String text) {
+    void setConnectButtonText(String text) {
         this.butConnect.setText(text);
     }
 
@@ -478,46 +545,7 @@ public class MainView extends JFrame {
         }
     }
 
-    private void createIcons() {
-        URL imgURL = getClass().getClassLoader().getResource("images/OR.png");
-        if ( imgURL != null ) {
-            this.icoTitle = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_green.png");
-        if ( imgURL != null ) {
-            this.icoRobotConnected = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_red.png");
-        if ( imgURL != null ) {
-            this.icoRobotDiscovered = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_grey.png");
-        if ( imgURL != null ) {
-            this.icoRobotNotDiscovered = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/plug.gif");
-        if ( imgURL != null ) {
-            this.gifPlug = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/connect.gif");
-        if ( imgURL != null ) {
-            this.gifConnect = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/server.gif");
-        if ( imgURL != null ) {
-            this.gifServer = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/connected.gif");
-        if ( imgURL != null ) {
-            this.gifConnected = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/arrow-sorted-down.png");
-        if ( imgURL != null ) {
-            this.arrowDown = new ImageIcon(imgURL);
-        }
-        imgURL = getClass().getClassLoader().getResource("images/arrow-sorted-up.png");
-        if ( imgURL != null ) {
-            this.arrowUp = new ImageIcon(imgURL);
-        }
+    public Point getRobotButtonLocation() {
+        return new Point(this.butRobot.getLocationOnScreen().x + this.butRobot.getWidth(), this.butRobot.getLocationOnScreen().y);
     }
 }

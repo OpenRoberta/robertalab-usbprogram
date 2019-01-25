@@ -1,9 +1,10 @@
-package de.fhg.iais.roberta.ui;
+package de.fhg.iais.roberta.ui.serialMonitor;
 
+import de.fhg.iais.roberta.ui.OraButton;
 import de.fhg.iais.roberta.util.IOraUiListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -12,9 +13,12 @@ import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ResourceBundle;
+
+import static de.fhg.iais.roberta.ui.main.MainView.ICON_TITLE;
 
 class SerialMonitorView extends JFrame {
     private final JTextArea textArea = new JTextArea();
@@ -34,8 +38,8 @@ class SerialMonitorView extends JFrame {
         this.addWindowListener(listener);
 
         // Titlebar
-        this.setIconImage(new ImageIcon(getClass().getClassLoader().getResource("images/OR.png")).getImage());
-        this.setTitle("Serial Monitor");
+        this.setIconImage(ICON_TITLE.getImage());
+        this.setTitle(messages.getString("serialMonitor"));
 
         this.add(this.scrollPane, BorderLayout.CENTER);
         this.scrollPane.setBorder(new EmptyBorder(4, 4, 4, 4));
@@ -51,6 +55,7 @@ class SerialMonitorView extends JFrame {
         this.rateSelection.setMaximumSize(this.rateSelection.getMinimumSize());
         this.rateSelection.setSelectedIndex(3);
         this.rateSelection.addActionListener(listener);
+        this.rateSelection.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         this.options.add(Box.createRigidArea(new Dimension(8, 0)));
         this.options.add(Box.createRigidArea(new Dimension(8, 0)));
         this.options.add(this.clearButton);

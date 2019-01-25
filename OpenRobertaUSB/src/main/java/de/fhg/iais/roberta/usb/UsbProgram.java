@@ -5,7 +5,7 @@ import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoDetector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Connector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Detector;
-import de.fhg.iais.roberta.ui.MainController;
+import de.fhg.iais.roberta.ui.main.MainController;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +20,7 @@ class UsbProgram {
     private static final Logger LOG = LoggerFactory.getLogger(UsbProgram.class);
 
     private static final long TIMEOUT = 1000L;
+    private static final long HELP_THRESHOLD = 20L * 1000000000L; // seconds converted to nanoseconds
 
     private final MainController controller;
 
@@ -36,6 +37,15 @@ class UsbProgram {
     }
 
     void run() {
+        long previousTime = System.nanoTime();
+        long helpTimer = 0L;
+        boolean helpNotShown = true;
+
+        Map<Integer, String> errors = this.arduinoDetector.getReadIdFileErrors();
+        if ( !errors.isEmpty() ) {
+            this.controller.showConfigErrorPopup(errors);
+        }
+
         // Main loop, repeats until the program is closed
         while ( !Thread.currentThread().isInterrupted() ) {
 
@@ -43,6 +53,7 @@ class UsbProgram {
             this.robotDetectorHelper.reset();
             Robot selectedRobot = Robot.NONE;
             while ( selectedRobot == Robot.NONE ) {
+
                 List<Robot> detectedRobots = this.robotDetectorHelper.getDetectedRobots();
                 // If only one robot is available select that one immediately
                 if (detectedRobots.size() == 1) {
@@ -56,9 +67,17 @@ class UsbProgram {
                 // Repeat until a robot is available or one was selected
                 try {
                     Thread.sleep(TIMEOUT);
+                    helpTimer += (System.nanoTime() - previousTime);
+
+                    if ( (helpTimer > HELP_THRESHOLD) && helpNotShown ) {
+                        this.controller.showHelp();
+                        helpNotShown = false;
+                    }
                 } catch ( InterruptedException e ) {
                     LOG.error("Thread was interrupted while waiting for a robot selection: {}", e.getMessage());
                 }
+
+                previousTime = System.nanoTime();
             }
 
             // Create the appropriate connector depending on the robot
@@ -68,10 +87,6 @@ class UsbProgram {
                     connector = new Ev3Connector();
                     break;
                 case ARDUINO:
-                    Map<Integer, String> errors = this.arduinoDetector.getReadIdFileErrors();
-                    if ( !errors.isEmpty() ) {
-                        this.controller.showConfigErrorPopup(errors);
-                    }
                     connector = new ArduinoConnector(this.arduinoDetector.getType(), this.arduinoDetector.getPortName());
                     break;
                 default:

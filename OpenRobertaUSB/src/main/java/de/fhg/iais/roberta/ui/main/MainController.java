@@ -1,7 +1,11 @@
-package de.fhg.iais.roberta.ui;
+package de.fhg.iais.roberta.ui.main;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
+import de.fhg.iais.roberta.ui.IController;
+import de.fhg.iais.roberta.ui.OraPopup;
+import de.fhg.iais.roberta.ui.deviceIdEditor.DeviceIdEditorController;
+import de.fhg.iais.roberta.ui.serialMonitor.SerialMonitorController;
 import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 import de.fhg.iais.roberta.util.IOraListener;
@@ -13,10 +17,13 @@ import org.slf4j.LoggerFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JList;
 import javax.swing.event.ListSelectionEvent;
+import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
@@ -30,6 +37,19 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+
+import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_EV3;
+import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_OTHER;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_ABOUT;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_EXIT;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_CONNECT;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_CUSTOMADDRESS;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_DISCONNECT;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_HELP;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_ID_EDITOR;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_SCAN;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_SERIAL;
+import static de.fhg.iais.roberta.ui.main.MainView.IMAGES_PATH;
 
 public class MainController implements IController, IOraListenable<Robot> {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
@@ -54,15 +74,23 @@ public class MainController implements IController, IOraListenable<Robot> {
 
     // Child controllers of the main controller, this includes other windows/JFrames that are launched from the main controller
     private SerialMonitorController serialMonitorController = null;
+    private final DeviceIdEditorController deviceIdEditorController;
+
+    private final HelpDialog helpDialog;
 
     public MainController(ResourceBundle rb) {
-        this.mainView = new MainView(rb, new MainViewListener());
+        MainViewListener mainViewListener = new MainViewListener();
+        this.mainView = new MainView(rb, mainViewListener);
         this.mainView.setVisible(true);
         this.rb = rb;
         this.connected = false;
 
         this.customAddresses.addAll(loadCustomAddresses());
         this.mainView.setCustomAddresses(this.customAddresses);
+
+        this.deviceIdEditorController = new DeviceIdEditorController(rb);
+
+        this.helpDialog = new HelpDialog(this.mainView, rb, mainViewListener);
     }
 
     public void setRobotList(List<Robot> robotList) {
@@ -79,7 +107,7 @@ public class MainController implements IController, IOraListenable<Robot> {
 
                 this.mainView.setWaitForConnect();
 
-                if (this.connector.getRobot() == Robot.ARDUINO) {
+                if ( this.connector.getRobot() == Robot.ARDUINO ) {
                     this.mainView.showArduinoMenu();
                     this.mainView.setArduinoMenuText(this.connector.getBrickName());
                 }
@@ -133,7 +161,7 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.mainView.hideRobotList();
 
         // Serial monitor is only needed for arduino based robots
-        if (connector.getRobot() == Robot.ARDUINO) {
+        if ( connector.getRobot() == Robot.ARDUINO ) {
             this.serialMonitorController = new SerialMonitorController(this.rb);
             this.serialMonitorController.setConnector(connector);
         }
@@ -150,6 +178,16 @@ public class MainController implements IController, IOraListenable<Robot> {
         showAttentionPopup("errorReadConfig", sb.toString());
     }
 
+    public void showHelp() {
+        this.helpDialog.setLocation(this.mainView.getRobotButtonLocation());
+        this.helpDialog.setVisible(true);
+    }
+
+    public void toggleHelp() {
+        this.helpDialog.setLocation(this.mainView.getRobotButtonLocation());
+        this.helpDialog.setVisible(!this.helpDialog.isVisible());
+    }
+
     private void setDiscover() {
         LOG.debug("setDiscover");
         this.connected = false;
@@ -157,36 +195,18 @@ public class MainController implements IController, IOraListenable<Robot> {
     }
 
     private void showAttentionPopup(String key, String additionalInfo) {
-        OraPopup.showPopup(this.mainView, this.rb.getString("attention"),
-            this.rb.getString(key) + additionalInfo, null);
-    }
-
-    private void addCustomAddress(Pair<String, String> address) {
-        this.customAddresses.addFirst(address);
-        this.customAddresses = this.customAddresses.stream().distinct().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toCollection(ArrayDeque::new));
-        this.mainView.setCustomAddresses(this.customAddresses);
-    }
-
-    private void saveCustomAddresses() {
-        // space as delimiter, colon may be used in ipv6
-        List<String> collect = this.customAddresses.stream().map(address -> address.getFirst() + ADDRESS_DELIMITER + address.getSecond()).limit(
-            MAX_ADDRESS_ENTRIES).collect(Collectors.toList());
-        try {
-            Files.write(new File(CUSTOM_ADDRESSES_FILENAME).toPath(), collect, StandardCharsets.UTF_8);
-        } catch ( IOException e ) {
-            LOG.error("Something went wrong while writing the custom addresses: {}", e.getMessage());
-        }
+        OraPopup.showPopup(this.mainView, this.rb.getString("attention"), this.rb.getString(key) + additionalInfo, null);
     }
 
     private static List<Pair<String, String>> loadCustomAddresses() {
         try {
-            List<Pair<String, String>> addresses = new ArrayList<>();
+            Collection<Pair<String, String>> addresses = new ArrayList<>();
 
             List<String> readAddresses = Files.readAllLines(new File(CUSTOM_ADDRESSES_FILENAME).toPath(), StandardCharsets.UTF_8);
 
             for ( String address : readAddresses ) {
                 Pair<String, String> ipPort = extractIpAndPort(address);
-                if (ipPort != null) {
+                if ( ipPort != null ) {
                     addresses.add(ipPort);
                 }
             }
@@ -201,12 +221,12 @@ public class MainController implements IController, IOraListenable<Robot> {
     private static Pair<String, String> extractIpAndPort(String address) {
         String[] s = address.split(ADDRESS_DELIMITER);
 
-        if (s.length == 1) {
+        if ( s.length == 1 ) {
             return new Pair<>(s[0], "");
-        } else if (s.length == 2) {
+        } else if ( s.length == 2 ) {
             String sPort = s[1];
 
-            if (validatePort(sPort)) {
+            if ( validatePort(sPort) ) {
                 return new Pair<>(s[0], sPort);
             }
         }
@@ -249,28 +269,50 @@ public class MainController implements IController, IOraListenable<Robot> {
         public void actionPerformed(ActionEvent e) {
             LOG.info("User performed action {}", e.getActionCommand());
             switch ( e.getActionCommand() ) {
-                case "close":
+                case CMD_EXIT:
                     closeApplication();
                     break;
-                case "about":
+                case CMD_ABOUT:
                     showAboutPopup();
                     break;
-                case "customaddress":
+                case CMD_CUSTOMADDRESS:
                     MainController.this.mainView.toggleAdvancedOptions();
                     break;
-                case "scan":
+                case CMD_SCAN:
                     MainController.this.connector.interrupt();
                     setDiscover();
                     break;
-                case "serial":
+                case CMD_SERIAL:
                     MainController.this.serialMonitorController.showSerialMonitor();
                     break;
-                case "connect":
+                case CMD_CONNECT:
                     checkForValidCustomServerAddressAndUpdate();
                     MainController.this.connector.userPressConnectButton();
                     break;
-                case "disconnect":
+                case CMD_DISCONNECT:
                     MainController.this.connector.userPressDisconnectButton();
+                    break;
+                case CMD_HELP:
+                    toggleHelp();
+                    break;
+                case CMD_ID_EDITOR:
+                    MainController.this.deviceIdEditorController.showEditor();
+                    MainController.this.connector.interrupt();
+                    setDiscover();
+                    break;
+                case CMD_SELECT_EV3:
+                    MainController.this.helpDialog.dispose();
+                    try {
+                        Desktop.getDesktop().browse(new URI(MainController.this.rb.getString("linkEv3UsbWiki")));
+                    } catch ( IOException | URISyntaxException e1 ) {
+                        LOG.error("Could not open browser: {}", e1.getMessage());
+                    }
+                    break;
+                case CMD_SELECT_OTHER:
+                    MainController.this.helpDialog.dispose();
+                    MainController.this.deviceIdEditorController.showEditor();
+                    MainController.this.connector.interrupt();
+                    setDiscover();
                     break;
                 default:
                     throw new UnsupportedOperationException("Action " + e.getActionCommand() + " is not implemented!");
@@ -293,7 +335,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         }
 
         private void showAboutPopup() {
-            OraPopup.showPopup(MainController.this.mainView, MainController.this.rb.getString("about"), MainController.this.rb.getString("aboutInfo"),
+            OraPopup.showPopup(MainController.this.mainView,
+                MainController.this.rb.getString("about"),
+                MainController.this.rb.getString("aboutInfo"),
                 new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
         }
@@ -314,7 +358,7 @@ public class MainController implements IController, IOraListenable<Robot> {
                         MainController.this.connector.updateCustomServerAddress(ip);
                         addCustomAddress(address);
                     } else {
-                        if (validatePort(port)) {
+                        if ( validatePort(port) ) {
                             String formattedAddress = ip + ':' + port;
                             LOG.info("Valid custom address {}", formattedAddress);
                             MainController.this.connector.updateCustomServerAddress(formattedAddress);
@@ -329,15 +373,39 @@ public class MainController implements IController, IOraListenable<Robot> {
             }
         }
 
+        private void addCustomAddress(Pair<String, String> address) {
+            MainController.this.customAddresses.addFirst(address);
+            MainController.this.customAddresses =
+                MainController.this.customAddresses.stream().distinct().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toCollection(ArrayDeque::new));
+            MainController.this.mainView.setCustomAddresses(MainController.this.customAddresses);
+        }
+
+        private void saveCustomAddresses() {
+            // space as delimiter, colon may be used in ipv6
+            List<String>
+                collect =
+                MainController.this.customAddresses.stream()
+                    .map(address -> address.getFirst() + ADDRESS_DELIMITER + address.getSecond())
+                    .limit(MAX_ADDRESS_ENTRIES)
+                    .collect(Collectors.toList());
+            try {
+                Files.write(new File(CUSTOM_ADDRESSES_FILENAME).toPath(), collect, StandardCharsets.UTF_8);
+            } catch ( IOException e ) {
+                LOG.error("Something went wrong while writing the custom addresses: {}", e.getMessage());
+            }
+        }
+
         private void closeApplication() {
             LOG.debug("closeApplication");
             saveCustomAddresses();
             if ( MainController.this.connected ) {
                 String[] buttons = {
-                    MainController.this.rb.getString("close"), MainController.this.rb.getString("cancel")
+                    MainController.this.rb.getString("exit"), MainController.this.rb.getString("cancel")
                 };
-                int n = OraPopup.showPopup(MainController.this.mainView, MainController.this.rb.getString("attention"), MainController.this.rb.getString("confirmCloseInfo"),
-                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/Roberta.png"))),
+                int n = OraPopup.showPopup(MainController.this.mainView,
+                    MainController.this.rb.getString("attention"),
+                    MainController.this.rb.getString("confirmCloseInfo"),
+                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource(IMAGES_PATH + "Roberta.png"))),
                     buttons);
                 if ( n == 0 ) {
                     if ( MainController.this.connector != null ) {
