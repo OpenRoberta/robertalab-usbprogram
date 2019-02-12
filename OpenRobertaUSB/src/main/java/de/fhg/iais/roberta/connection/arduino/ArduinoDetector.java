@@ -9,9 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -53,12 +54,13 @@ public class ArduinoDetector implements IDetector {
 
     private void loadArduinoIds() {
         File file = new File(ARDUINO_ID_FILE);
-        if ( !file.exists() ) {
+
+        if (!file.exists()) {
             LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILE);
-            file = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(ARDUINO_ID_FILE)).getFile());
         }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (InputStream inputStream = (file.exists()) ? new FileInputStream(file) : getClass().getClassLoader().getResourceAsStream(ARDUINO_ID_FILE);
+             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             int lineNr = 1;
             while ( (line = br.readLine()) != null ) {
