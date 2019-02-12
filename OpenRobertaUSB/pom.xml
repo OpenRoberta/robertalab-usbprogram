@@ -2,12 +2,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.roberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
-	<version>3.2.0</version>
+	<version>3.2.1</version>
 	<properties>
-		<!-- the server and the crosscompiler SHOULD be compatible between(including) the following two versions of software deployed on the ROBOT -->
-		<validversionrange.From>1.4.0</validversionrange.From>
-		<validversionrange.To>3.1.0</validversionrange.To>
-
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
 		<buildTimeStamp>${maven.build.timestamp}</buildTimeStamp>
 

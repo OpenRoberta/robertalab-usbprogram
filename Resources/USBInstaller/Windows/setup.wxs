@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
 	<?define RTMProductVersion="3.0.0" ?>
-	<?define ProductVersion="3.1.1" ?>
+	<?define ProductVersion="3.2.1" ?>
 	<?define UpgradeCode="B0066112-867A-40FF-AD0E-555393C5AA32"?>
 	<?define ProductCode="05780FA2-4F8F-49E2-8015-A7EEE519B4CD"?>
 	<?define Manufacturer="Fraunhofer IAIS"?>
