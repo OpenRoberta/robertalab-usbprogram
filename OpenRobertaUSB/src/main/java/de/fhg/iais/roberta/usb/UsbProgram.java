@@ -28,10 +28,8 @@ class UsbProgram {
     private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.ev3Detector, this.arduinoDetector));
 
     UsbProgram() {
-        ResourceBundle messages = ResourceBundle.getBundle(PropertyHelper.getInstance().getProperty("messagesBundle"), Locale.GERMAN);
+        ResourceBundle messages = ResourceBundle.getBundle(PropertyHelper.getInstance().getProperty("messagesBundle"), Locale.getDefault());
         LOG.info("Using locale {}", (messages.getLocale().getLanguage().isEmpty()) ? "default en" : messages.getLocale());
-
-
 
         this.controller = new MainController(messages);
         this.controller.registerListener(this.robotDetectorHelper); // register the detector helper as a listener to selection events of the controller

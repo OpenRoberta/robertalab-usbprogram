@@ -37,9 +37,9 @@ public abstract class AbstractConnector implements IConnector {
     @Override
     public void run() {
         this.running = true;
-        LOG.info("Starting {} connector.", this.brickName);
+        LOG.info("Starting {} connector", this.brickName);
         setupServerCommunicator();
-        LOG.info("Server address {}", this.serverAddress);
+        LOG.info("Using server address {}", this.serverAddress);
         while ( this.running ) {
             runLoopBody();
         }
@@ -62,7 +62,6 @@ public abstract class AbstractConnector implements IConnector {
 
     @Override
     public void userPressDisconnectButton() {
-        LOG.info("DISCONNECTING by user");
         this.userDisconnect = true;
         this.state = State.DISCOVER;
         fire(this.state);

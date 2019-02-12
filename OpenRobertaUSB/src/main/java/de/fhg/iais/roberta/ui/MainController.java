@@ -56,7 +56,7 @@ public class MainController implements IController, IOraListenable<Robot> {
 
     @Override
     public void setState(State state) {
-        LOG.info("setState: {}", state);
+        LOG.info("Setting state to {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 this.connected = false;
@@ -110,7 +110,7 @@ public class MainController implements IController, IOraListenable<Robot> {
 
     @Override
     public void setConnector(IConnector connector) {
-        LOG.info("setConnector: {}", connector.getRobot());
+        LOG.debug("setConnector: {}", connector.getRobot());
         this.connector = connector;
         this.connector.registerListener(this::setState);
 
@@ -165,7 +165,7 @@ public class MainController implements IController, IOraListenable<Robot> {
     private class MainViewListener implements IOraUiListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            LOG.info("actionPerformed: {}", e.getActionCommand());
+            LOG.info("User performed action {}", e.getActionCommand());
             switch ( e.getActionCommand() ) {
                 case "close":
                     closeApplication();
@@ -197,14 +197,14 @@ public class MainController implements IController, IOraListenable<Robot> {
 
         @Override
         public void windowClosing(WindowEvent e) {
-            LOG.info("windowClosing");
+            LOG.info("User closed main window");
             closeApplication();
         }
 
         // Sends event to all listeners waiting for the robot selection event when a robot was selected
         @Override
         public void valueChanged(ListSelectionEvent e) {
-            LOG.info("valueChanged: {}", e.getFirstIndex());
+            LOG.debug("valueChanged: {}", e.getFirstIndex());
             JList<?> source = (JList<?>) e.getSource();
             source.clearSelection();
             fire(MainController.this.robotList.get(e.getFirstIndex()));

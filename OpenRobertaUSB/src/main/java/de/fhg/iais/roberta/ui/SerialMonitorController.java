@@ -102,7 +102,7 @@ public class SerialMonitorController implements IController {
 
         @Override
         public void windowClosing(WindowEvent e) {
-            LOG.info("windowClosing");
+            LOG.info("User closed serial window");
             stopSerialLogging();
         }
     }
