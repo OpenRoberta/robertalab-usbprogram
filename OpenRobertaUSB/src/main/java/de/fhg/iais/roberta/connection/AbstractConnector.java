@@ -37,7 +37,7 @@ public abstract class AbstractConnector implements IConnector {
     @Override
     public void run() {
         this.running = true;
-        LOG.info("Starting {} connector thread.", this.brickName);
+        LOG.info("Starting {} connector.", this.brickName);
         setupServerCommunicator();
         LOG.info("Server address {}", this.serverAddress);
         while ( this.running ) {

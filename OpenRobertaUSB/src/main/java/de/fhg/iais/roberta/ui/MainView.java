@@ -365,6 +365,7 @@ public class MainView extends JFrame {
         this.butConnect.setText(this.messages.getString("disconnect"));
         this.butConnect.setEnabled(true);
         this.butConnect.setSelected(true);
+        this.butConnect.setActionCommand("disconnect");
         this.lblRobot.setIcon(this.icoRobotConnected);
         this.txtAreaInfo.setText(this.messages.getString("serverInfo"));
         this.lblMainGif.setIcon(this.gifConnected);
@@ -376,6 +377,7 @@ public class MainView extends JFrame {
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
+        this.butConnect.setActionCommand("connect");
         this.butScan.setEnabled(false);
         this.butScan.setSelected(false);
         this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
