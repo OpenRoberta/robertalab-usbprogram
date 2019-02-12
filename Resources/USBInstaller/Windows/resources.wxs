@@ -16,9 +16,6 @@
             <Component Id="CMP_LIBUSB" Directory="DIR_ARDUINO" Guid="*">
                 <File Id="FILE_LIBUSB" KeyPath="yes" Source="SourceDir\windows\arduino\libusb0.dll" />
             </Component>
-            <Component Id="CMP_ARDUINO_IDS" Directory="INSTALLDIR" Guid="*">
-                <File Id="FILE_ARDUINO_IDS" KeyPath="yes" Source="SourceDir\arduino-ids.txt" />
-            </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
