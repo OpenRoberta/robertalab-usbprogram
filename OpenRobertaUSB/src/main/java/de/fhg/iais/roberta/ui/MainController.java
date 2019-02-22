@@ -6,6 +6,7 @@ import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 import de.fhg.iais.roberta.util.IOraListener;
 import de.fhg.iais.roberta.util.IOraUiListener;
+import de.fhg.iais.roberta.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +15,15 @@ import javax.swing.JList;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,6 +40,11 @@ public class MainController implements IController, IOraListenable<Robot> {
     private final ResourceBundle rb;
     private final MainView mainView;
 
+    private static final int MAX_ADDRESS_ENTRIES = 5;
+    private static final String CUSTOM_ADDRESSES_FILENAME = "customaddresses.txt";
+    private static final String ADDRESS_DELIMITER = " "; // colon may be used in ipv6 addresses
+    private Deque<Pair<String, String>> customAddresses = new ArrayDeque<>();
+
     // For the robot selection if there is more than one robot available
     private List<Robot> robotList = null;
 
@@ -47,6 +60,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.mainView.setVisible(true);
         this.rb = rb;
         this.connected = false;
+
+        this.customAddresses.addAll(loadCustomAddresses());
+        this.mainView.setCustomAddresses(this.customAddresses);
     }
 
     public void setRobotList(List<Robot> robotList) {
@@ -145,6 +161,74 @@ public class MainController implements IController, IOraListenable<Robot> {
             this.rb.getString(key) + additionalInfo, null);
     }
 
+    private void addCustomAddress(Pair<String, String> address) {
+        if (validatePort(address.getSecond())) {
+            this.customAddresses.addFirst(address);
+            this.customAddresses = this.customAddresses.stream().distinct().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toCollection(ArrayDeque::new));
+            this.mainView.setCustomAddresses(this.customAddresses);
+        }
+    }
+
+    private void saveCustomAddresses() {
+        // space as delimiter, colon may be used in ipv6
+        List<String> collect = this.customAddresses.stream().map(address -> address.getFirst() + ADDRESS_DELIMITER + address.getSecond()).limit(
+            MAX_ADDRESS_ENTRIES).collect(Collectors.toList());
+        try {
+            Files.write(new File(CUSTOM_ADDRESSES_FILENAME).toPath(), collect, StandardCharsets.UTF_8);
+        } catch ( IOException e ) {
+            LOG.error("Something went wrong while writing the custom addresses: {}", e.getMessage());
+        }
+    }
+
+    private static List<Pair<String, String>> loadCustomAddresses() {
+        try {
+            List<Pair<String, String>> addresses = new ArrayList<>();
+
+            List<String> readAddresses = Files.readAllLines(new File(CUSTOM_ADDRESSES_FILENAME).toPath(), StandardCharsets.UTF_8);
+
+            for ( String address : readAddresses ) {
+                Pair<String, String> ipPort = extractIpAndPort(address);
+                if (ipPort != null) {
+                    addresses.add(ipPort);
+                }
+            }
+
+            return addresses.stream().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toList());
+        } catch ( IOException e ) {
+            LOG.error("Something went wrong while reading the custom addresses: {}", e.getMessage());
+        }
+        return Collections.emptyList();
+    }
+
+    private static Pair<String, String> extractIpAndPort(String address) {
+        String[] s = address.split(ADDRESS_DELIMITER);
+
+        if (s.length == 1) {
+            return new Pair<>(s[0], "");
+        } else if (s.length == 2) {
+            String sPort = s[1];
+
+            if (validatePort(sPort)) {
+                return new Pair<>(s[0], sPort);
+            }
+        }
+        return null;
+    }
+
+    private static boolean validatePort(String sPort) {
+        try {
+            int port = Integer.valueOf(sPort);
+
+            if ( (port >= 0) && (port <= 65535) ) {
+                return true;
+            }
+        } catch ( NumberFormatException e ) {
+            LOG.error("The given port is invalid: {}", sPort);
+        }
+
+        return false;
+    }
+
     @Override
     public void registerListener(IOraListener<Robot> listener) {
         this.listeners.add(listener);
@@ -174,7 +258,7 @@ public class MainController implements IController, IOraListenable<Robot> {
                     showAboutPopup();
                     break;
                 case "customaddress":
-                    MainController.this.mainView.showAdvancedOptions();
+                    MainController.this.mainView.toggleAdvancedOptions();
                     break;
                 case "scan":
                     MainController.this.connector.interrupt();
@@ -219,8 +303,10 @@ public class MainController implements IController, IOraListenable<Robot> {
         private void checkForValidCustomServerAddressAndUpdate() {
             LOG.debug("checkForValidCustomServerAddressAndUpdate");
             if ( MainController.this.mainView.isCustomAddressSelected() ) {
-                String ip = MainController.this.mainView.getCustomIP();
-                String port = MainController.this.mainView.getCustomPort();
+                Pair<String, String> address = MainController.this.mainView.getCustomAddress();
+                String ip = address.getFirst();
+                String port = address.getSecond();
+
                 if ( ip.isEmpty() ) {
                     LOG.info("Invalid custom address (null or empty) - Using default address");
                     MainController.this.connector.resetToDefaultServerAddress();
@@ -229,10 +315,11 @@ public class MainController implements IController, IOraListenable<Robot> {
                         LOG.info("Valid custom ip {}, using default ports", ip);
                         MainController.this.connector.updateCustomServerAddress(ip);
                     } else {
-                        String address = ip + ':' + port;
-                        LOG.info("Valid custom address {}", address);
-                        MainController.this.connector.updateCustomServerAddress(address);
+                        String formattedAddress = ip + ':' + port;
+                        LOG.info("Valid custom address {}", formattedAddress);
+                        MainController.this.connector.updateCustomServerAddress(formattedAddress);
                     }
+                    addCustomAddress(address);
                 }
             } else {
                 MainController.this.connector.resetToDefaultServerAddress();
@@ -241,6 +328,7 @@ public class MainController implements IController, IOraListenable<Robot> {
 
         private void closeApplication() {
             LOG.debug("closeApplication");
+            saveCustomAddresses();
             if ( MainController.this.connected ) {
                 String[] buttons = {
                     MainController.this.rb.getString("close"), MainController.this.rb.getString("cancel")

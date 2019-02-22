@@ -1,6 +1,7 @@
 package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.util.IOraUiListener;
+import de.fhg.iais.roberta.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,7 +9,8 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -41,9 +43,9 @@ public class MainView extends JFrame {
     private static final Logger LOG = LoggerFactory.getLogger(MainView.class);
 
     private static final long serialVersionUID = 1L;
-    private static final int WIDTH = 310;
+    private static final int WIDTH = 320;
     private static final int HEIGHT = 500;
-    private static final int ADVANCED_HEIGHT = 558;
+    private static final int ADVANCED_HEIGHT = 562;
 
     private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
 
@@ -71,6 +73,16 @@ public class MainView extends JFrame {
         UIManager.put("TextArea.font", font);
         UIManager.put("Label.font", font);
         UIManager.put("List.font", font);
+        UIManager.put("Button.font", font);
+        UIManager.put("ComboBox.font", font);
+        UIManager.put("ComboBox.buttonBackground", Color.decode("#dddddd"));
+        UIManager.put("ComboBox.buttonShadow", Color.decode("#afca04"));
+        UIManager.put("ComboBox.buttonDarkShadow", Color.decode("#afca04"));
+        UIManager.put("ComboBox.buttonHighlight", Color.decode("#dddddd"));
+        UIManager.put("ComboBox.background", Color.white);
+        UIManager.put("ComboBox.disabledBackground", Color.white);
+        UIManager.put("ComboBox.disabledForeground", Color.white);
+        UIManager.put("ComboBox.selectionBackground", Color.decode("#dddddd"));
     }
 
     // Menu
@@ -111,17 +123,16 @@ public class MainView extends JFrame {
 
     // Custom panel
     private final JPanel pnlCustomInfo = new JPanel();
-    private final JCheckBox checkCustom = new JCheckBox();
-    private final JLabel lblCustom = new JLabel();
+    private final JButton butCustom = new JButton();
 
     private final JPanel pnlCustomHeading = new JPanel();
     private final JTextField txtFldCustomHeading = new JTextField();
 
     private final JPanel pnlCustomAddress = new JPanel();
     private final JLabel lblCustomIp = new JLabel();
-    private final JTextField txtFldCustomIp = new JTextField();
+    private final JComboBox<String> cmbBoxCustomIp = new JComboBox<>();
     private final JLabel lblCustomPort = new JLabel();
-    private final JTextField txtFldCustomPort = new JTextField();
+    private final JComboBox<String> cmbBoxCustomPort = new JComboBox<>();
 
     // Resources
     private final ResourceBundle messages;
@@ -133,9 +144,11 @@ public class MainView extends JFrame {
     private ImageIcon gifConnect;
     private ImageIcon gifServer;
     private ImageIcon gifConnected;
-
+    private ImageIcon arrowDown;
+    private ImageIcon arrowUp;
 
     private boolean toggle = true;
+    private boolean customMenuVisible = false;
 
     public MainView(ResourceBundle messages, IOraUiListener listener) {
         this.messages = messages;
@@ -260,15 +273,18 @@ public class MainView extends JFrame {
     private void initCustomPanelGUI() {
         // Custom info panel
         this.pnlCenter.add(this.pnlCustomInfo);
-        this.pnlCustomInfo.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlCustomInfo.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 12));
         this.pnlCustomInfo.setLayout(new FlowLayout(FlowLayout.LEADING));
 
-        this.pnlCustomInfo.add(this.checkCustom);
-        this.checkCustom.setActionCommand("customaddress");
-
-        this.pnlCustomInfo.add(this.lblCustom);
-        this.lblCustom.setBorder(null);
-        this.lblCustom.setText(this.messages.getString("checkCustomDesc"));
+        this.pnlCustomInfo.add(this.butCustom);
+        this.butCustom.setActionCommand("customaddress");
+        this.butCustom.setIcon(this.arrowDown);
+        this.butCustom.setText(this.messages.getString("checkCustomDesc"));
+        this.butCustom.setBorderPainted( false );
+        this.butCustom.setBackground(Color.WHITE);
+        this.butCustom.setFocusPainted(false);
+        this.butCustom.setContentAreaFilled(false);
+        this.butCustom.setMargin(new Insets(0,0,0,0));
 
         // Custom heading panel
         this.pnlCenter.add(this.pnlCustomHeading);
@@ -289,18 +305,17 @@ public class MainView extends JFrame {
         this.lblCustomIp.setBorder(null);
         this.lblCustomIp.setText(this.messages.getString("ip"));
 
-        this.pnlCustomAddress.add(Box.createVerticalGlue());
-        this.pnlCustomAddress.add(this.txtFldCustomIp);
-        this.txtFldCustomIp.setEditable(true);
-        this.txtFldCustomIp.setColumns(10);
+        this.pnlCustomAddress.add(this.cmbBoxCustomIp);
+        this.cmbBoxCustomIp.setEditable(true);
+        this.cmbBoxCustomIp.setPreferredSize(new Dimension(146, 25));
 
         this.pnlCustomAddress.add(this.lblCustomPort);
         this.lblCustomPort.setBorder(null);
         this.lblCustomPort.setText(this.messages.getString("port"));
 
-        this.pnlCustomAddress.add(this.txtFldCustomPort);
-        this.txtFldCustomPort.setEditable(true);
-        this.txtFldCustomPort.setColumns(4);
+        this.pnlCustomAddress.add(this.cmbBoxCustomPort);
+        this.cmbBoxCustomPort.setEditable(true);
+        this.cmbBoxCustomPort.setPreferredSize(new Dimension(70, 25));
 
         this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
     }
@@ -333,7 +348,7 @@ public class MainView extends JFrame {
         this.butConnect.addActionListener(listener);
         this.butScan.addActionListener(listener);
         this.butClose.addActionListener(listener);
-        this.checkCustom.addActionListener(listener);
+        this.butCustom.addActionListener(listener);
     }
 
     private void setWindowListener(WindowListener windowListener) {
@@ -420,17 +435,21 @@ public class MainView extends JFrame {
         this.menuArduino.setText(text);
     }
 
-    public void showAdvancedOptions() {
-        if ( this.checkCustom.isSelected() ) {
+    public void toggleAdvancedOptions() {
+        if (!this.customMenuVisible ) {
             this.setSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.showCustom();
             this.revalidate();
+            this.butCustom.setIcon(this.arrowUp);
+            this.customMenuVisible = true;
         } else {
             this.setSize(new Dimension(WIDTH, HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
             this.hideCustom();
             this.revalidate();
+            this.butCustom.setIcon(this.arrowDown);
+            this.customMenuVisible = false;
         }
     }
 
@@ -438,16 +457,21 @@ public class MainView extends JFrame {
         this.butConnect.setText(text);
     }
 
-    public String getCustomIP() {
-        return this.txtFldCustomIp.getText();
-    }
-
-    public String getCustomPort() {
-        return this.txtFldCustomPort.getText();
-    }
-
     public boolean isCustomAddressSelected() {
-        return this.checkCustom.isSelected();
+        return this.customMenuVisible;
+    }
+
+    public Pair<String, String> getCustomAddress() {
+        return new Pair<>((String) this.cmbBoxCustomIp.getSelectedItem(), (String) this.cmbBoxCustomPort.getSelectedItem());
+    }
+
+    public void setCustomAddresses(Iterable<Pair<String, String>> addresses) {
+        this.cmbBoxCustomIp.removeAllItems();
+        this.cmbBoxCustomPort.removeAllItems();
+        for ( Pair<String, String> address : addresses ) {
+            this.cmbBoxCustomIp.addItem(address.getFirst());
+            this.cmbBoxCustomPort.addItem(address.getSecond());
+        }
     }
 
     private void createIcons() {
@@ -482,6 +506,14 @@ public class MainView extends JFrame {
         imgURL = getClass().getClassLoader().getResource("images/connected.gif");
         if ( imgURL != null ) {
             this.gifConnected = new ImageIcon(imgURL);
+        }
+        imgURL = getClass().getClassLoader().getResource("images/arrow-sorted-down.png");
+        if ( imgURL != null ) {
+            this.arrowDown = new ImageIcon(imgURL);
+        }
+        imgURL = getClass().getClassLoader().getResource("images/arrow-sorted-up.png");
+        if ( imgURL != null ) {
+            this.arrowUp = new ImageIcon(imgURL);
         }
     }
 }
