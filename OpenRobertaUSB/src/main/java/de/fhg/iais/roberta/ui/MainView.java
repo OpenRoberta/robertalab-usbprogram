@@ -2,29 +2,13 @@ package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.util.IOraUiListener;
 import de.fhg.iais.roberta.util.Pair;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.DefaultEditorKit;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -33,6 +17,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowListener;
 import java.net.URL;
 import java.util.List;
@@ -48,7 +33,8 @@ public class MainView extends JFrame {
     private static final int ADVANCED_HEIGHT = 562;
 
     private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
-
+    
+    // General setup for the UI colors and fonts
     static {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -83,6 +69,14 @@ public class MainView extends JFrame {
         UIManager.put("ComboBox.disabledBackground", Color.white);
         UIManager.put("ComboBox.disabledForeground", Color.white);
         UIManager.put("ComboBox.selectionBackground", Color.decode("#dddddd"));
+
+        // CMD + C support for copying on Mac OS
+        if (SystemUtils.IS_OS_MAC_OSX) {
+            InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
+        }
     }
 
     // Menu
