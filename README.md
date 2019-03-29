@@ -47,31 +47,18 @@ branch.
     
 ### Installer creation
 Linux:
-- run `mvn clean install` in the `OpenRobertaUSB` directory
-- go to `Resources/USBInstaller` directory and duplicate the `Linux` directory with `cp -R Linux OpenRobertaUSB`
-- run `tar -zcvf OpenRobertaUSBLinux-X.X.X.tar.gz OpenRobertaUSB` with correct version
+- run the `releaseLinux.sh` script in the `installers` directory
+- add the version to the resulting file
 
 Windows:
 - download [WiX Toolset](https://github.com/wixtoolset/wix3/releases)
 - download [WDK 8.1](https://www.microsoft.com/en-us/download/details.aspx?id=42273)
-- run `mvn clean install` in the `OpenRobertaUSB` directory
-- change version in `setup.wxs` (optionally change WDK path, if non default was used) in `Resources/USBInstaller/Windows`
-- run `build.bat`
-- add version number to resulting `.msi` files
+- run the `releaseWindows.sh` script in the `installers` directory (e.g. in Git Bash)
+- add the version to the resulting files
 
 Mac (this method is really weird, but it works for now):
-- run `mvn clean install` in the `OpenRobertaUSB` directory
-- download one of the older [releases](https://github.com/OpenRoberta/robertalab-usbprogram/releases)
-- expand the downloaded pkg with `pkgutil --expand-full OpenRobertaUSBMacOSX-X.X.X USB`
-- go into the new folder `USB`
-- change the version & size in the `Distribution` file
-- show package contents of `ORUSB.pkg` and then `OpenRobertaUSB`
-- replace `OpenRobertaUSB.jar` with the newly built one from `USBInstaller/OSX`
-- optionally replace `Resources/AutomatorApplet.icns`
-- optionally replace `Resources/osx/arduino/avrdude` and `avrdude.conf`
-- check permissions of avrdude
-- optionally change java parameters in `document.wflow` (search for `java`)
-- flatten the package with `pkgutil --flatten-full USB OpenRobertaUSBMacOSX-X.X.X.pkg`
+- run the `releaseOSX.sh` script in the `installers` directory
+- add the version to the resulting file
 
 
 ### Third party libraries
