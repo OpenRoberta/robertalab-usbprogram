@@ -1,0 +1,11 @@
+linux/OR.png
+linux/arduino-ids.txt
+linux/install.sh
+linux/resources/
+osx/Info.plist
+osx/arduino-ids.txt
+osx/resources
+osx/start.sh
+windows/arduino-ids.txt
+windows/resources
+windows/setup.wxs

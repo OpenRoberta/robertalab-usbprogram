@@ -92,56 +92,75 @@
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+			<!--Linux-->
+			<resource>
+				<targetPath>${basedir}/../installers/linux/resources/linux/arduino</targetPath>
+				<directory>resources/linux/arduino</directory>
+			</resource>
+			<resource>
+				<targetPath>${basedir}/../installers/linux</targetPath>
+				<directory>src/main/resources</directory>
 				<includes>
-					<include>**</include>
+					<include>arduino-ids.txt</include>
+				</includes>
+			</resource>
+			<resource>
+				<targetPath>${basedir}/../installers/linux</targetPath>
+				<directory>src/main/resources/images</directory>
+				<includes>
+					<include>OR.png</include>
+				</includes>
+			</resource>
+			<resource>
+				<targetPath>${basedir}/../installers/linux</targetPath>
+				<directory>resources/linux</directory>
+				<includes>
+					<include>install.sh</include>
 				</includes>
 				<filtering>true</filtering>
 			</resource>
+			<!--Windows-->
 			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/Linux/resources/linux/arduino</targetPath>
-				<directory>resources/linux/arduino</directory>
-				<includes>
-					<include>avrdude</include>
-					<include>avrdude.conf</include>
-				</includes>
-			</resource>
-			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/Linux</targetPath>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>arduino-ids.txt</include>
-				</includes>
-			</resource>
-			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/Windows/resources/windows/arduino</targetPath>
+				<targetPath>${basedir}/../installers/windows/resources/windows/arduino</targetPath>
 				<directory>resources/windows/arduino</directory>
-				<includes>
-					<include>avrdude.exe</include>
-					<include>avrdude.conf</include>
-                    <include>libusb0.dll</include>
-				</includes>
 			</resource>
 			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/Windows</targetPath>
+				<targetPath>${basedir}/../installers/windows</targetPath>
 				<directory>src/main/resources</directory>
 				<includes>
 					<include>arduino-ids.txt</include>
 				</includes>
 			</resource>
 			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/OSX/Resources/osx/arduino</targetPath>
+				<targetPath>${basedir}/../installers/windows</targetPath>
+				<directory>resources/windows</directory>
+				<includes>
+					<include>setup.wxs</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+			<!--OSX-->
+			<resource>
+				<targetPath>${basedir}/../installers/osx/resources/osx/arduino</targetPath>
 				<directory>resources/osx/arduino</directory>
-				<includes>
-					<include>avrdude</include>
-					<include>avrdude.conf</include>
-				</includes>
 			</resource>
 			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/OSX/</targetPath>
+				<targetPath>${basedir}/../installers/osx/</targetPath>
 				<directory>src/main/resources</directory>
 				<includes>
 					<include>arduino-ids.txt</include>
 				</includes>
+			</resource>
+			<resource>
+				<targetPath>${basedir}/../installers/osx</targetPath>
+				<directory>resources/osx</directory>
+				<includes>
+					<include>Info.plist</include>
+					<include>start.sh</include>
+				</includes>
+				<filtering>true</filtering>
 			</resource>
 		</resources>
 		<plugins>
@@ -178,7 +197,7 @@
 						</goals>
 						<configuration>
 							<headerType>gui</headerType>
-                            <outfile>${basedir}/../Resources/USBInstaller/Windows/${project.artifactId}.exe</outfile>
+                            <outfile>${basedir}/../installers/windows/${project.artifactId}.exe</outfile>
 							<jar>${basedir}/target/${project.artifactId}-${project.version}.jar</jar>
 							<chdir>.</chdir>
 							<restartOnCrash>true</restartOnCrash>
@@ -206,11 +225,11 @@
                 <executions>
                     <execution>
                         <id>copy-jars</id>
-                        <phase>package</phase>
+                        <phase>install</phase>
                         <configuration>
                             <target>
-                                <copy file="target/${project.artifactId}-${project.version}.jar" tofile="../Resources/USBInstaller/Linux/${project.artifactId}.jar"/>
-								<copy file="target/${project.artifactId}-${project.version}.jar" tofile="../Resources/USBInstaller/OSX/${project.artifactId}.jar"/>
+                                <copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/../installers/linux/${project.artifactId}.jar"/>
+								<copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/../installers/osx/${project.artifactId}.jar"/>
                             </target>
                         </configuration>
                         <goals>

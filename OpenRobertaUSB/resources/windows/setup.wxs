@@ -5,7 +5,7 @@
 	<?define UpgradeCode="B0066112-867A-40FF-AD0E-555393C5AA32"?>
 	<?define Language="1033"?>
 	<?define Codepage="1252"?>
-	<?define ProductVersion="3.2.1"?>
+	<?define ProductVersion="${version}"?>
 	
 	<?define RTMProductVersion="2.0.0"?>
     <?define WDKDirectory="C:\Program Files (x86)\Windows Kits\8.1\"?>
@@ -42,8 +42,8 @@
 	</Upgrade>
 
 		<Media Id='1' Cabinet='Setup.cab' EmbedCab='yes' />
-		<Icon Id="OpenRobertaUSB" SourceFile="OpenRobertaUSB.exe" />
-		<Property Id="ARPPRODUCTICON" Value="OpenRobertaUSB" />
+		<Icon Id="${artifactId}" SourceFile="${artifactId}.exe" />
+		<Property Id="ARPPRODUCTICON" Value="${artifactId}" />
 		<WixVariable Id="WixUILicenseRtf" Value="Resources_installer\Apache2.rtf" />
         <WixVariable Id="WixUIBannerBmp" Value="Resources_installer\ORBanner.bmp" />
         <WixVariable Id="WixUIDialogBmp" Value="Resources_installer\ORDialog.bmp" />
@@ -67,7 +67,7 @@
 						</Component>						
 					</Directory>
 					<Component Id="MainExecutable" Guid="*">
-						<File Id="OpenRobertaUSBEXE" Source="OpenRobertaUSB.exe" KeyPath="yes"/>					
+						<File Id="OpenRobertaUSBEXE" Source="${artifactId}.exe" KeyPath="yes"/>					
 					</Component>
 					<Component Id="ArduinoIds" Guid="*">
 						<File Id="arduinoIdsTXT" Source="arduino-ids.txt" KeyPath="yes"/>	
@@ -77,7 +77,7 @@
 			<Directory Id="ProgramMenuFolder" Name="Programs">
 				<Directory Id="ProgramMenuDir" Name="OpenRoberta">
 					<Component Id="ProgramMenuDir" Guid="*">
-						<Shortcut Id="StartMenuShortcut" Name="Open Roberta USB" Description="Open Roberta USB" Target="[INSTALLDIR]OpenRobertaUSB.exe" WorkingDirectory="INSTALLDIR" />
+						<Shortcut Id="StartMenuShortcut" Name="Open Roberta USB" Description="Open Roberta USB" Target="[INSTALLDIR]${artifactId}.exe" WorkingDirectory="INSTALLDIR" />
 						<RemoveFolder Id="ProgramMenuDir" On="uninstall" />
 						<RegistryValue Root="HKCU" Key="Software\OpenRoberta" Name="startmenuinstalled" Type="integer" Value="1" KeyPath="yes" />
 					</Component>
@@ -85,7 +85,7 @@
 			</Directory>
 			<Directory Id="DesktopFolder" Name="Desktop">
 				<Component Id="DesktopDir" Guid="*">
-					<Shortcut Id="DesktopShortcut" Name="Open Roberta USB" Description="Open Roberta USB" Target="[INSTALLDIR]OpenRobertaUSB.exe" WorkingDirectory="INSTALLDIR" />
+					<Shortcut Id="DesktopShortcut" Name="Open Roberta USB" Description="Open Roberta USB" Target="[INSTALLDIR]${artifactId}.exe" WorkingDirectory="INSTALLDIR" />
 					<RemoveFolder Id="DesktopFolder" On="uninstall" />
 					<RegistryValue Root="HKCU" Key="Software\OpenRoberta" Name="desktopinstalled" Type="integer" Value="1" KeyPath="yes" />
 				</Component>

@@ -3,9 +3,9 @@
 dir="$( pwd )"
 
 echo "[Desktop Entry]" > "/usr/share/applications/ORUSB.desktop"
-echo "Version=3.2.1" >> "/usr/share/applications/ORUSB.desktop"
+echo "Version=${version}" >> "/usr/share/applications/ORUSB.desktop"
 echo "Name=Open Roberta USB" >> "/usr/share/applications/ORUSB.desktop"
-echo "Exec=java -jar -Dfile.encoding=utf-8 $dir/OpenRobertaUSB.jar" >> "/usr/share/applications/ORUSB.desktop"
+echo "Exec=java -jar -Dfile.encoding=utf-8 $dir/${artifactId}.jar" >> "/usr/share/applications/ORUSB.desktop"
 echo "Path=$dir" >> "/usr/share/applications/ORUSB.desktop"
 echo "Icon=$dir/OR.png" >> "/usr/share/applications/ORUSB.desktop"
 echo "Terminal=false" >> "/usr/share/applications/ORUSB.desktop"
