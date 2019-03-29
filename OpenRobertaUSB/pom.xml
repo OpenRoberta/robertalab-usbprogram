@@ -159,6 +159,8 @@
 				<includes>
 					<include>Info.plist</include>
 					<include>start.sh</include>
+					<include>package/Distribution</include>
+					<include>package/ORUSB.pkg/PackageInfo</include>
 				</includes>
 				<filtering>true</filtering>
 			</resource>
