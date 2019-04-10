@@ -456,7 +456,17 @@ public class MainView extends JFrame {
     }
 
     public Pair<String, String> getCustomAddress() {
-        return new Pair<>((String) this.cmbBoxCustomIp.getSelectedItem(), (String) this.cmbBoxCustomPort.getSelectedItem());
+        String ip = (String) this.cmbBoxCustomIp.getSelectedItem();
+        String port = (String) this.cmbBoxCustomPort.getSelectedItem();
+
+        if (ip == null) {
+            ip = "";
+        }
+        if (port == null) {
+            port = "";
+        }
+
+        return new Pair<>(ip, port);
     }
 
     public void setCustomAddresses(Iterable<Pair<String, String>> addresses) {

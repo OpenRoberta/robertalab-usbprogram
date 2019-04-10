@@ -162,11 +162,9 @@ public class MainController implements IController, IOraListenable<Robot> {
     }
 
     private void addCustomAddress(Pair<String, String> address) {
-        if (validatePort(address.getSecond())) {
-            this.customAddresses.addFirst(address);
-            this.customAddresses = this.customAddresses.stream().distinct().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toCollection(ArrayDeque::new));
-            this.mainView.setCustomAddresses(this.customAddresses);
-        }
+        this.customAddresses.addFirst(address);
+        this.customAddresses = this.customAddresses.stream().distinct().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toCollection(ArrayDeque::new));
+        this.mainView.setCustomAddresses(this.customAddresses);
     }
 
     private void saveCustomAddresses() {
@@ -308,18 +306,23 @@ public class MainController implements IController, IOraListenable<Robot> {
                 String port = address.getSecond();
 
                 if ( ip.isEmpty() ) {
-                    LOG.info("Invalid custom address (null or empty) - Using default address");
+                    LOG.warn("Invalid custom address - Using default address");
                     MainController.this.connector.resetToDefaultServerAddress();
                 } else {
                     if ( port.isEmpty() ) {
                         LOG.info("Valid custom ip {}, using default ports", ip);
                         MainController.this.connector.updateCustomServerAddress(ip);
+                        addCustomAddress(address);
                     } else {
-                        String formattedAddress = ip + ':' + port;
-                        LOG.info("Valid custom address {}", formattedAddress);
-                        MainController.this.connector.updateCustomServerAddress(formattedAddress);
+                        if (validatePort(port)) {
+                            String formattedAddress = ip + ':' + port;
+                            LOG.info("Valid custom address {}", formattedAddress);
+                            MainController.this.connector.updateCustomServerAddress(formattedAddress);
+                            addCustomAddress(address);
+                        } else {
+                            LOG.warn("Invalid port {}", port);
+                        }
                     }
-                    addCustomAddress(address);
                 }
             } else {
                 MainController.this.connector.resetToDefaultServerAddress();

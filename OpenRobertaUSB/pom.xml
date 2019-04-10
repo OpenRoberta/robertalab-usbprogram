@@ -95,6 +95,8 @@
 				<filtering>true</filtering>
 				<includes>
 					<include>OpenRobertaUSB.properties</include>
+					<include>messages.properties</include>
+					<include>messages_de.properties</include>
 				</includes>
 			</resource>
 			<resource>
@@ -102,6 +104,8 @@
 				<filtering>false</filtering>
 				<excludes>
 					<exclude>OpenRobertaUSB.properties</exclude>
+					<exclude>messages.properties</exclude>
+					<exclude>messages_de.properties</exclude>
 				</excludes>
 			</resource>
 			<!--Linux-->
