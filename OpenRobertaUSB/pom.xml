@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.roberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
-	<version>3.3.0</version>
+	<version>3.3.1</version>
 	<properties>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
 		<buildTimeStamp>${maven.build.timestamp}</buildTimeStamp>
@@ -93,6 +93,16 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>true</filtering>
+				<includes>
+					<include>OpenRobertaUSB.properties</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>OpenRobertaUSB.properties</exclude>
+				</excludes>
 			</resource>
 			<!--Linux-->
 			<resource>
