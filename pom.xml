@@ -110,25 +110,25 @@
             </resource>
             <!--Linux-->
             <resource>
-                <targetPath>${basedir}/../installers/linux/resources/linux/arduino</targetPath>
+                <targetPath>${basedir}/installers/linux/resources/linux/arduino</targetPath>
                 <directory>resources/linux/arduino</directory>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/linux</targetPath>
+                <targetPath>${basedir}/installers/linux</targetPath>
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>arduino-ids.txt</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/linux</targetPath>
+                <targetPath>${basedir}/installers/linux</targetPath>
                 <directory>src/main/resources/images</directory>
                 <includes>
                     <include>OR.png</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/linux</targetPath>
+                <targetPath>${basedir}/installers/linux</targetPath>
                 <directory>resources/linux</directory>
                 <includes>
                     <include>install.sh</include>
@@ -137,18 +137,18 @@
             </resource>
             <!--Windows-->
             <resource>
-                <targetPath>${basedir}/../installers/windows/resources/windows/arduino</targetPath>
+                <targetPath>${basedir}/installers/windows/resources/windows/arduino</targetPath>
                 <directory>resources/windows/arduino</directory>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/windows</targetPath>
+                <targetPath>${basedir}/installers/windows</targetPath>
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>arduino-ids.txt</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/windows</targetPath>
+                <targetPath>${basedir}/installers/windows</targetPath>
                 <directory>resources/windows</directory>
                 <includes>
                     <include>setup.wxs</include>
@@ -157,18 +157,18 @@
             </resource>
             <!--OSX-->
             <resource>
-                <targetPath>${basedir}/../installers/osx/resources/osx/arduino</targetPath>
+                <targetPath>${basedir}/installers/osx/resources/osx/arduino</targetPath>
                 <directory>resources/osx/arduino</directory>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/osx/</targetPath>
+                <targetPath>${basedir}/installers/osx/</targetPath>
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>arduino-ids.txt</include>
                 </includes>
             </resource>
             <resource>
-                <targetPath>${basedir}/../installers/osx</targetPath>
+                <targetPath>${basedir}/installers/osx</targetPath>
                 <directory>resources/osx</directory>
                 <includes>
                     <include>Info.plist</include>
@@ -213,7 +213,7 @@
                         </goals>
                         <configuration>
                             <headerType>gui</headerType>
-                            <outfile>${basedir}/../installers/windows/${project.artifactId}.exe</outfile>
+                            <outfile>${basedir}/installers/windows/${project.artifactId}.exe</outfile>
                             <jar>${basedir}/target/${project.artifactId}-${project.version}.jar</jar>
                             <chdir>.</chdir>
                             <restartOnCrash>true</restartOnCrash>
@@ -244,8 +244,8 @@
                         <phase>install</phase>
                         <configuration>
                             <target>
-                                <copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/../installers/linux/${project.artifactId}.jar"/>
-                                <copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/../installers/osx/${project.artifactId}.jar"/>
+                                <copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/installers/linux/${project.artifactId}.jar"/>
+                                <copy file="${basedir}/target/${project.artifactId}-${project.version}.jar" tofile="${basedir}/installers/osx/${project.artifactId}.jar"/>
                             </target>
                         </configuration>
                         <goals>

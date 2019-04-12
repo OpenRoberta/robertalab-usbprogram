@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ../OpenRobertaUSB && mvn clean install && cd ../installers
+cd .. && mvn clean install && cd installers
 cd osx && ./appify start.sh OpenRobertaUSB
 mkdir -p package/ORUSB.pkg/Payload/Applications/OpenRobertaUSB.app/
 cp -a resources OpenRobertaUSB.app/Contents/ 

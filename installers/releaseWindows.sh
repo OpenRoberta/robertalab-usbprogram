@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ../OpenRobertaUSB && mvn clean install && cd ../installers
+cd .. && mvn clean install && cd installers
 cd windows
 ./build.bat
 mv OpenRobertaUSBSetupDE.msi ..

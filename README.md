@@ -6,13 +6,13 @@ an usb connection.
 
 #### Clone the repository and compile
     git clone git://github.com/OpenRoberta/robertalab-usbprogram.git
-    cd robertalab-usbprogram/OpenRobertaUSB
+    cd robertalab-usbprogram
     mvn clean install
 
 ### Run USB program
 For running the USB program use Java.
 
-    java -jar ./OpenRobertaUSB/target/OpenRobertaUSB-*.jar
+    java -jar target/OpenRobertaUSB-*.jar
 
 ### Development notes
 
