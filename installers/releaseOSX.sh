@@ -7,4 +7,3 @@ cp -a OpenRobertaUSB.app package/ORUSB.pkg/Payload/Applications/
 pkgutil --flatten-full package OpenRobertaUSBMacOSX.pkg
 mv OpenRobertaUSBMacOSX.pkg ..
 rm -rf OpenRobertaUSB.app
-rm -rf package
