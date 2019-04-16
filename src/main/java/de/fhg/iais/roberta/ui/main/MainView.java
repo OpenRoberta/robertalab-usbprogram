@@ -71,6 +71,7 @@ public class MainView extends JFrame {
     static final String CMD_DISCONNECT = "disconnect";
     static final String CMD_HELP = "help";
     static final String CMD_ID_EDITOR = "id_editor";
+    static final String CMD_COPY = "copy";
 
     public static final String IMAGES_PATH = "images/";
 
@@ -164,7 +165,9 @@ public class MainView extends JFrame {
     private final JList<String> listRobots = new JList<>();
 
     private final JPanel pnlToken = new JPanel();
+    private final JTextField txtFldPreToken = new JTextField();
     private final JTextField txtFldToken = new JTextField();
+    private final OraButton butCopy = new OraButton();
 
     private final JPanel pnlMainGif = new JPanel();
     private final JLabel lblMainGif = new JLabel();
@@ -197,6 +200,7 @@ public class MainView extends JFrame {
     private static final Icon GIF_CONNECTED = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "connected.gif")));
     private static final Icon ARROW_DOWN = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-down.png")));
     private static final Icon ARROW_UP = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-up.png")));
+    private static final Icon CLIPBOARD = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "clipboard.png")));
     private final ResourceBundle messages;
 
     private boolean toggle = true;
@@ -285,10 +289,20 @@ public class MainView extends JFrame {
         // Token panel
         this.pnlCenter.add(this.pnlToken);
 
+        this.pnlToken.add(this.txtFldPreToken);
+        this.txtFldPreToken.setFont(FONT.deriveFont(18.0f));
+        this.txtFldPreToken.setBorder(BorderFactory.createEmptyBorder());
+        this.txtFldPreToken.setEditable(false);
+
         this.pnlToken.add(this.txtFldToken);
         this.txtFldToken.setFont(FONT.deriveFont(18.0f));
         this.txtFldToken.setBorder(BorderFactory.createEmptyBorder());
         this.txtFldToken.setEditable(false);
+
+        this.pnlToken.add(this.butCopy);
+        this.butCopy.setIcon(CLIPBOARD);
+        this.butCopy.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
+        this.butCopy.setActionCommand(CMD_COPY);
 
         // Main gif panel
         this.pnlCenter.add(this.pnlMainGif);
@@ -411,6 +425,7 @@ public class MainView extends JFrame {
         this.butScan.addActionListener(listener);
         this.butClose.addActionListener(listener);
         this.butCustom.addActionListener(listener);
+        this.butCopy.addActionListener(listener);
     }
 
     private void setWindowListener(WindowListener windowListener) {
@@ -441,7 +456,6 @@ public class MainView extends JFrame {
     void setWaitForCmd() {
         this.butConnect.setText(this.messages.getString("disconnect"));
         this.butConnect.setEnabled(true);
-        this.butConnect.setSelected(true);
         this.butConnect.setActionCommand(CMD_DISCONNECT);
         this.butRobot.setState(CONNECTED);
         this.txtAreaInfo.setText(this.messages.getString("serverInfo"));
@@ -449,7 +463,9 @@ public class MainView extends JFrame {
     }
 
     void setDiscover() {
+        this.txtFldPreToken.setText("");
         this.txtFldToken.setText("");
+        this.butCopy.setVisible(false);
         this.butRobot.setState(NOT_DISCOVERED);
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
@@ -467,9 +483,17 @@ public class MainView extends JFrame {
         this.butConnect.setEnabled(false);
     }
 
-    void setNew(String token) {
+    void setNew(String prefix, String token, boolean showCopy) {
         this.butScan.setEnabled(false);
+        this.txtFldPreToken.setText(prefix);
         this.txtFldToken.setText(token);
+        // Reset preferred size
+        this.txtFldPreToken.setPreferredSize(null);
+        this.txtFldToken.setPreferredSize(null);
+        // Add one pixel width to remove small scrolling
+        this.txtFldPreToken.setPreferredSize(new Dimension((int) this.txtFldPreToken.getPreferredSize().getWidth() + 1, (int) this.txtFldPreToken.getPreferredSize().getHeight()));
+        this.txtFldToken.setPreferredSize(new Dimension((int) this.txtFldToken.getPreferredSize().getWidth() + 1, (int) this.txtFldToken.getPreferredSize().getHeight()));
+        this.butCopy.setVisible(showCopy);
         this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
         this.lblMainGif.setIcon(GIF_SERVER);
     }

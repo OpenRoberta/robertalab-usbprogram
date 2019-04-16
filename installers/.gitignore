@@ -18,4 +18,7 @@ windows/arduino-ids.txt
 windows/resources
 windows/setup.wxs
 windows/OpenRobertaUSB.exe
+windows/*.wixpdb
+windows/*.wixobj
 *.msi
+

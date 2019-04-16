@@ -191,7 +191,7 @@ public class ArduinoDetector implements IDetector {
                 while (idVendorMatcher.find() && idProductMatcher.find() && ttyMatcher.find()) {
                     String idVendorDec = idVendorMatcher.group(1);
                     String idProductDec = idProductMatcher.group(1);
-                    String tty = ttyMatcher.group(1);
+                    String tty = "tty." + ttyMatcher.group(1);
 
                     String name = "";
                     if (nameMatcher.find()) {

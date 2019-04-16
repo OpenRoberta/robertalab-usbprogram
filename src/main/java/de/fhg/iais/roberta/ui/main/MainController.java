@@ -18,6 +18,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JList;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.Desktop;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -26,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +45,7 @@ import java.util.stream.Collectors;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_EV3;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_OTHER;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_ABOUT;
+import static de.fhg.iais.roberta.ui.main.MainView.CMD_COPY;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_EXIT;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_CONNECT;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_CUSTOMADDRESS;
@@ -113,14 +118,14 @@ public class MainController implements IController, IOraListenable<Robot> {
                 }
                 break;
             case WAIT_FOR_SERVER:
-                this.mainView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
+                this.mainView.setNew(this.rb.getString("token"), this.connector.getToken(), true);
                 this.mainView.setWaitForServer();
                 break;
             case RECONNECT:
                 this.mainView.setConnectButtonText(this.rb.getString("disconnect"));
             case WAIT_FOR_CMD:
                 this.connected = true;
-                this.mainView.setNew(this.rb.getString("name") + ' ' + this.connector.getBrickName());
+                this.mainView.setNew(this.rb.getString("name"), this.connector.getBrickName(), false);
                 this.mainView.setWaitForCmd();
                 break;
             case DISCOVER:
@@ -212,8 +217,10 @@ public class MainController implements IController, IOraListenable<Robot> {
             }
 
             return addresses.stream().limit(MAX_ADDRESS_ENTRIES).collect(Collectors.toList());
+        } catch ( NoSuchFileException e ) {
+            LOG.info("No {} file found. Creating one when closing the program.", CUSTOM_ADDRESSES_FILENAME);
         } catch ( IOException e ) {
-            LOG.error("Something went wrong while reading the custom addresses: {}", e.getMessage());
+            LOG.warn("Something went wrong while reading the custom addresses: {}", e.getMessage());
         }
         return Collections.emptyList();
     }
@@ -297,7 +304,9 @@ public class MainController implements IController, IOraListenable<Robot> {
                     break;
                 case CMD_ID_EDITOR:
                     MainController.this.deviceIdEditorController.showEditor();
-                    MainController.this.connector.interrupt();
+                    if (MainController.this.connector != null) {
+                        MainController.this.connector.interrupt();
+                    }
                     setDiscover();
                     break;
                 case CMD_SELECT_EV3:
@@ -311,8 +320,15 @@ public class MainController implements IController, IOraListenable<Robot> {
                 case CMD_SELECT_OTHER:
                     MainController.this.helpDialog.dispose();
                     MainController.this.deviceIdEditorController.showEditor();
-                    MainController.this.connector.interrupt();
+                    if (MainController.this.connector != null) {
+                        MainController.this.connector.interrupt();
+                    }
                     setDiscover();
+                    break;
+                case CMD_COPY:
+                    StringSelection stringSelection = new StringSelection(connector.getToken());
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(stringSelection, null);
                     break;
                 default:
                     throw new UnsupportedOperationException("Action " + e.getActionCommand() + " is not implemented!");

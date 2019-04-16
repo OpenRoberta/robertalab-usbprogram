@@ -20,13 +20,13 @@ class UsbProgram {
     private static final Logger LOG = LoggerFactory.getLogger(UsbProgram.class);
 
     private static final long TIMEOUT = 1000L;
-    private static final long HELP_THRESHOLD = 20L * 1000000000L; // seconds converted to nanoseconds
+    private static final long HELP_THRESHOLD = 20000L;
 
     private final MainController controller;
 
     private final Ev3Detector ev3Detector = new Ev3Detector();
     private final ArduinoDetector arduinoDetector = new ArduinoDetector();
-    private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.ev3Detector, this.arduinoDetector));
+    private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.arduinoDetector, this.ev3Detector));
 
     UsbProgram() {
         ResourceBundle messages = ResourceBundle.getBundle(PropertyHelper.getInstance().getProperty("messagesBundle"), Locale.getDefault());
@@ -37,7 +37,7 @@ class UsbProgram {
     }
 
     void run() {
-        long previousTime = System.nanoTime();
+        long previousTime = System.currentTimeMillis();
         long helpTimer = 0L;
         boolean helpNotShown = true;
 
@@ -67,7 +67,7 @@ class UsbProgram {
                 // Repeat until a robot is available or one was selected
                 try {
                     Thread.sleep(TIMEOUT);
-                    helpTimer += (System.nanoTime() - previousTime);
+                    helpTimer += (System.currentTimeMillis() - previousTime);
 
                     if ( (helpTimer > HELP_THRESHOLD) && helpNotShown ) {
                         this.controller.showHelp();
@@ -77,7 +77,7 @@ class UsbProgram {
                     LOG.error("Thread was interrupted while waiting for a robot selection: {}", e.getMessage());
                 }
 
-                previousTime = System.nanoTime();
+                previousTime = System.currentTimeMillis();
             }
 
             // Create the appropriate connector depending on the robot

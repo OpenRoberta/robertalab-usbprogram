@@ -36,6 +36,6 @@ Windows:
 - run the `releaseWindows.sh` script in the `installers` directory (e.g. in Git Bash)
 - add the version to the resulting files
 
-Mac (this method is really weird, but it works for now):
+Mac:
 - run the `releaseOSX.sh` script in the `installers` directory
 - add the version to the resulting file
