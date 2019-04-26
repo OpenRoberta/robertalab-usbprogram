@@ -140,17 +140,21 @@ public class ArduinoDetector implements IDetector {
 
     private static List<SerialDevice> getUsbDevicesWindows() {
         List<SerialDevice> devices = new ArrayList<>();
-        try {
-            Runtime rt = Runtime.getRuntime();
-            String[] commands = {
+
+        ProcessBuilder processBuilder = new ProcessBuilder(
                 "powershell.exe",
                 "-Command",
-                "Get-WmiObject -Query \\\"SELECT Name, DeviceID FROM Win32_PnPEntity\\\""
-            };
-            Process pr = rt.exec(commands);
+                "Get-WmiObject -Query \\\"SELECT Name, DeviceID FROM Win32_PnPEntity\\\"");
+        try {
+            Process pr = processBuilder.start();
+            // Output stream has to be closed to work around process buffer size hanging
+            pr.getOutputStream().close();
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+                 BufferedReader errReader = new BufferedReader(new InputStreamReader(pr.getErrorStream()))) {
                 String result = reader.lines().collect(Collectors.joining("\n"));
+                // Also read the error stream to avoid hanging
+                String errors = errReader.lines().collect(Collectors.joining("\n"));
 
                 Matcher matcher = Pattern.compile("DeviceID\\s*:.*\\\\VID_(\\w{4}).PID_(\\w{4}).*\\nName\\s*: (.*)\\((COM\\d*)\\)").matcher(result);
 
@@ -163,7 +167,8 @@ public class ArduinoDetector implements IDetector {
                     devices.add(new SerialDevice(idVendor, idProduct, port, name));
                 }
             }
-        } catch ( IOException e ) {
+            pr.waitFor();
+        } catch ( InterruptedException | IOException e ) {
             LOG.error("Something went wrong while trying to query for Win32_PnPEntities: {}", e.getMessage());
         }
         return devices;

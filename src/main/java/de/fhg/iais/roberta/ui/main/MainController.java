@@ -93,9 +93,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.customAddresses.addAll(loadCustomAddresses());
         this.mainView.setCustomAddresses(this.customAddresses);
 
-        this.deviceIdEditorController = new DeviceIdEditorController(rb);
-
         this.helpDialog = new HelpDialog(this.mainView, rb, mainViewListener);
+
+        this.deviceIdEditorController = new DeviceIdEditorController(rb);
     }
 
     public void setRobotList(List<Robot> robotList) {

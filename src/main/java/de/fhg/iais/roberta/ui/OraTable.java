@@ -6,6 +6,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class OraTable extends JTable {
      * @param checkedColumns the columns that should be checked for equality
      * @return -1 if successful, or the index of the existing row TODO this is not really nice but works for now
      */
-    public int addRow(List<Object> rowData, Iterable<Integer> checkedColumns) {
+    public int addRow(List<Object> rowData, Collection<Integer> checkedColumns) {
         int index = rowExists(((FixedTableModel) getModel()).getData(), rowData, checkedColumns);
 
         if (index >= 0) {
@@ -44,7 +45,7 @@ public class OraTable extends JTable {
         }
     }
 
-    public void updateTable(List<List<Object>> newData, Iterable<Integer> checkedColumns) {
+    public void updateTable(List<List<Object>> newData, Collection<Integer> checkedColumns) {
         // Check if a row has to be removed
         List<List<Object>> data = ((FixedTableModel) getModel()).getData();
         for ( int i = 0; i < data.size(); i++ ) {
@@ -70,17 +71,18 @@ public class OraTable extends JTable {
      * @param checkedCols which columns to compare
      * @return -1 if the does not exist, its index otherwise
      */
-    private static int rowExists(List<List<Object>> tableData, List<Object> row, Iterable<Integer> checkedCols) {
+    private static int rowExists(List<List<Object>> tableData, List<Object> row, Collection<Integer> checkedCols) {
         for ( int i = 0; i < tableData.size(); i++ ) {
             List<Object> otherRow = tableData.get(i);
 
-            boolean checkedColsEqual = false;
-
+            int equalColumns = 0;
             for ( Integer checkedColumn : checkedCols ) {
-                checkedColsEqual = checkedColsEqual || otherRow.get(checkedColumn).equals(row.get(checkedColumn));
+                if (otherRow.get(checkedColumn).equals(row.get(checkedColumn))) {
+                    equalColumns++;
+                }
             }
 
-            if ( checkedColsEqual ) {
+            if ( equalColumns == checkedCols.size() ) {
                 return i;
             }
         }
