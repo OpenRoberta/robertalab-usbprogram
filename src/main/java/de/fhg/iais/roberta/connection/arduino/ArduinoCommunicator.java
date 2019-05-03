@@ -27,7 +27,13 @@ class ArduinoCommunicator {
             this.avrPath = PropertyHelper.getInstance().getProperty("WinPath");
             this.avrConfPath = PropertyHelper.getInstance().getProperty("WinConfPath");
         } else if ( SystemUtils.IS_OS_LINUX ) {
-            this.avrPath = PropertyHelper.getInstance().getProperty("LinPath");
+            if ( SystemUtils.OS_ARCH.equals("i386") ) {
+                this.avrPath = PropertyHelper.getInstance().getProperty("LinPath32");
+            } else if ( SystemUtils.OS_ARCH.equals("arm") ) {
+                this.avrPath = PropertyHelper.getInstance().getProperty("LinPathArm32");
+            } else {
+                this.avrPath = PropertyHelper.getInstance().getProperty("LinPath64");
+            }
             this.avrConfPath = PropertyHelper.getInstance().getProperty("LinConfPath");
         } else {
             this.avrPath = PropertyHelper.getInstance().getProperty("OsXPath");
@@ -99,6 +105,7 @@ class ArduinoCommunicator {
             LOG.debug("Exit code {}", eCode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());
+            return e.getMessage();
         }
     }
 }
