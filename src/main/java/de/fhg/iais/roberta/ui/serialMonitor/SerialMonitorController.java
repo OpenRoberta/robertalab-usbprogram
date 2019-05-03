@@ -6,6 +6,7 @@ import de.fhg.iais.roberta.connection.SerialLoggingTask;
 import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.ui.IController;
 import de.fhg.iais.roberta.util.IOraUiListener;
+import de.fhg.iais.roberta.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,9 @@ public class SerialMonitorController implements IController {
     }
 
     @Override
-    public void setState(State state) {
-        LOG.debug("setState: {}", state);
-        switch ( state ) {
+    public void setState(Pair<State, String> statePair) {
+        LOG.debug("setState: {}", statePair);
+        switch ( statePair.getFirst() ) {
             case WAIT_UPLOAD:
                 this.stopSerialLogging();
                 break;

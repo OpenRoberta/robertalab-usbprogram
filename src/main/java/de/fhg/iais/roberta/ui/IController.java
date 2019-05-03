@@ -2,6 +2,7 @@ package de.fhg.iais.roberta.ui;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
+import de.fhg.iais.roberta.util.Pair;
 
 public interface IController {
     /**
@@ -16,7 +17,7 @@ public interface IController {
      * Used as a listener for the connector state.
      * The controller should handle the states accordingly.
      *
-     * @param state the state of the connector
+     * @param statePair a pair of the state of the connector and an additional message
      */
-    void setState(State state);
+    void setState(Pair<State, String> statePair);
 }

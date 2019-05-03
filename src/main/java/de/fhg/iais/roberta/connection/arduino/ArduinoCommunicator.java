@@ -1,13 +1,17 @@
 package de.fhg.iais.roberta.connection.arduino;
 
 import de.fhg.iais.roberta.util.PropertyHelper;
+import de.fhg.iais.roberta.util.SerialDevice;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.stream.Collectors;
 
 class ArduinoCommunicator {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoCommunicator.class);
@@ -51,7 +55,7 @@ class ArduinoCommunicator {
         return deviceInfo;
     }
 
-    void uploadFile(String portName, String filePath) {
+    String uploadFile(String portName, String filePath) {
         setParameters();
         String portPath = "/dev/";
         if ( SystemUtils.IS_OS_WINDOWS ) {
@@ -91,20 +95,34 @@ class ArduinoCommunicator {
                     "-P" + portPath + portName,
                     eArg);
 
-            //            processBuilder.redirectInput(Redirect.INHERIT);
-            //            processBuilder.redirectOutput(Redirect.INHERIT);
+            processBuilder.redirectInput(Redirect.INHERIT);
+            processBuilder.redirectOutput(Redirect.INHERIT);
             processBuilder.redirectError(Redirect.INHERIT);
 
             Process p = processBuilder.start();
+
+            String error;
+            // Output stream has to be closed to work around process buffer size hanging
+            p.getOutputStream().close();
+            try (BufferedReader inpReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+                // Also read the input stream to avoid hanging
+                inpReader.lines().collect(Collectors.joining("\n"));
+                error = errReader.lines().collect(Collectors.joining("\n"));
+            }
+
             int eCode = p.waitFor();
+            LOG.debug("Exit code {}", eCode);
             if ( eCode == 0 ) {
                 LOG.info("Program uploaded successfully");
             } else {
                 LOG.info("Program was unable to be uploaded: {}", eCode);
+                return error;
             }
-            LOG.debug("Exit code {}", eCode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());
         }
+
+        return "";
     }
 }

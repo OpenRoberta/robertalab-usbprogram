@@ -3,6 +3,7 @@ package de.fhg.iais.roberta.connection;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
+import de.fhg.iais.roberta.util.Pair;
 
 /**
  * Defines a set of states, keywords and methods for handling the USB connection of a robot to the Open Roberta server. This interface is intended to be
@@ -10,7 +11,7 @@ import de.fhg.iais.roberta.util.IOraListenable;
  *
  * @author dpyka
  */
-public interface IConnector extends IOraListenable<State> {
+public interface IConnector extends IOraListenable<Pair<State, String>> {
 
     enum State {
         DISCOVER,

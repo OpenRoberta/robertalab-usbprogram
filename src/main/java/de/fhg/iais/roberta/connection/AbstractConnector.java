@@ -1,5 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
+import de.fhg.iais.roberta.util.Pair;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import de.fhg.iais.roberta.util.IOraListener;
 import org.json.JSONObject;
@@ -12,7 +13,7 @@ import java.util.Collection;
 public abstract class AbstractConnector implements IConnector {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
 
-    private final Collection<IOraListener<State>> listeners = new ArrayList<>();
+    private final Collection<IOraListener<Pair<State, String>>> listeners = new ArrayList<>();
 
     private final String serverAddress;
 
@@ -50,7 +51,7 @@ public abstract class AbstractConnector implements IConnector {
         this.running = false;
 
         this.state = State.DISCOVER;
-        fire(this.state);
+        fire(new Pair<>(this.state, ""));
     }
 
     protected abstract void runLoopBody();
@@ -64,7 +65,7 @@ public abstract class AbstractConnector implements IConnector {
     public void userPressDisconnectButton() {
         this.userDisconnect = true;
         this.state = State.DISCOVER;
-        fire(this.state);
+        fire(new Pair<>(this.state, ""));
     }
 
     @Override
@@ -110,26 +111,26 @@ public abstract class AbstractConnector implements IConnector {
      */
     protected void reset(State additionalErrorMessage) {
         if ( !this.userDisconnect && (additionalErrorMessage != null) ) {
-            fire(additionalErrorMessage);
+            fire(new Pair<>(additionalErrorMessage, ""));
         }
         this.userDisconnect = false;
         this.state = State.DISCOVER;
-        fire(this.state);
+        fire(new Pair<>(this.state, ""));
     }
 
     @Override
-    public void registerListener(IOraListener<State> listener) {
+    public void registerListener(IOraListener<Pair<State, String>> listener) {
         this.listeners.add(listener);
     }
 
     @Override
-    public void unregisterListener(IOraListener<State> listener) {
+    public void unregisterListener(IOraListener<Pair<State, String>> listener) {
         this.listeners.remove(listener);
     }
 
     @Override
-    public void fire(State object) {
-        for ( IOraListener<State> listener : this.listeners ) {
+    public void fire(Pair<State, String> object) {
+        for ( IOraListener<Pair<State, String>> listener : this.listeners ) {
             listener.update(object);
         }
     }

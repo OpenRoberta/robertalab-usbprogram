@@ -9,6 +9,7 @@ import de.fhg.iais.roberta.ui.OraPopup;
 import de.fhg.iais.roberta.ui.OraTable.FixedTableModel;
 import de.fhg.iais.roberta.util.ArduinoIdFileHelper;
 import de.fhg.iais.roberta.util.IOraUiListener;
+import de.fhg.iais.roberta.util.Pair;
 import de.fhg.iais.roberta.util.SerialDevice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,7 @@ public class DeviceIdEditorController implements IController {
     }
 
     @Override
-    public void setState(State state) {
+    public void setState(Pair<State, String> statePair) {
         // does not need the state
     }
 

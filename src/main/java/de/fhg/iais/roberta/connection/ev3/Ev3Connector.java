@@ -5,6 +5,7 @@ import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
 import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.OraTokenGenerator;
+import de.fhg.iais.roberta.util.Pair;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,10 +58,10 @@ public class Ev3Connector extends AbstractConnector {
                 } catch ( IOException e ) {
                     // ok
                 }
-                fire(this.state);
+                fire(new Pair<>(this.state, ""));
                 break;
             case WAIT_EXECUTION:
-                fire(this.state);
+                fire(new Pair<>(this.state, ""));
                 try {
                     if ( this.ev3comm.checkBrickState().equals("true") ) {
                         // program is running
@@ -70,7 +71,7 @@ public class Ev3Connector extends AbstractConnector {
                         // brick available and no program running
                         LOG.info("{} EV3 plugged in again, no program running, OK", State.WAIT_EXECUTION);
                         this.state = State.WAIT_FOR_CMD;
-                        fire(this.state);
+                        fire(new Pair<>(this.state, ""));
                     }
                 } catch ( IOException e ) {
                     // ok
@@ -80,7 +81,7 @@ public class Ev3Connector extends AbstractConnector {
                 try {
                     if ( this.ev3comm.checkBrickState().equals("true") ) {
                         this.state = State.DISCOVER;
-                        fire(State.DISCOVER);
+                        fire(new Pair<>(this.state, ""));
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                         // wait for user
                     }
@@ -91,7 +92,7 @@ public class Ev3Connector extends AbstractConnector {
             case CONNECT_BUTTON_IS_PRESSED:
                 this.token = OraTokenGenerator.generateToken();
                 this.state = State.WAIT_FOR_SERVER;
-                fire(State.WAIT_FOR_SERVER);
+                fire(new Pair<>(this.state, ""));
                 try {
                     this.brickData = this.ev3comm.pushToBrick(CMD_REGISTER);
                     this.brickData.put(KEY_TOKEN, this.token);
@@ -118,7 +119,7 @@ public class Ev3Connector extends AbstractConnector {
                             break;
                         }
                         this.state = State.WAIT_FOR_CMD;
-                        fire(State.WAIT_FOR_CMD);
+                        fire(new Pair<>(this.state, ""));
                     } else if ( command.equals(CMD_ABORT) ) {
                         reset(State.TOKEN_TIMEOUT);
                     } else {
@@ -211,8 +212,8 @@ public class Ev3Connector extends AbstractConnector {
             // ok
         }
 
-        fire(State.DISCOVER);
         this.state = State.DISCOVER;
+        fire(new Pair<>(this.state, ""));
     }
 
     @Override

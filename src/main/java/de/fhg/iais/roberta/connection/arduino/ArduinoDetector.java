@@ -154,7 +154,7 @@ public class ArduinoDetector implements IDetector {
                  BufferedReader errReader = new BufferedReader(new InputStreamReader(pr.getErrorStream()))) {
                 String result = reader.lines().collect(Collectors.joining("\n"));
                 // Also read the error stream to avoid hanging
-                String errors = errReader.lines().collect(Collectors.joining("\n"));
+                errReader.lines().collect(Collectors.joining("\n"));
 
                 Matcher matcher = Pattern.compile("DeviceID\\s*:.*\\\\VID_(\\w{4}).PID_(\\w{4}).*\\nName\\s*: (.*)\\((COM\\d*)\\)").matcher(result);
 

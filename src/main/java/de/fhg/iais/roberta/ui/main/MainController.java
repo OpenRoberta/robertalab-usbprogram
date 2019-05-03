@@ -94,9 +94,9 @@ public class MainController implements IController, IOraListenable<Robot> {
     }
 
     @Override
-    public void setState(State state) {
-        LOG.info("Setting state to {}", state);
-        switch ( state ) {
+    public void setState(Pair<State, String> statePair) {
+        LOG.info("Setting state to {}", statePair);
+        switch ( statePair.getFirst() ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 this.connected = false;
 
@@ -134,7 +134,7 @@ public class MainController implements IController, IOraListenable<Robot> {
                 showAttentionPopup("httpErrorInfo", "");
                 break;
             case ERROR_DOWNLOAD:
-                showAttentionPopup("downloadFail", "");
+                showAttentionPopup("downloadFail", System.lineSeparator() + statePair.getSecond());
                 break;
             case ERROR_BRICK:
                 showAttentionPopup("httpBrickInfo", "");
