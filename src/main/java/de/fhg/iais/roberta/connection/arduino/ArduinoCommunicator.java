@@ -105,7 +105,6 @@ class ArduinoCommunicator {
             LOG.debug("Exit code {}", eCode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());
-            return e.getMessage();
         }
     }
 }

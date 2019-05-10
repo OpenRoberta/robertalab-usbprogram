@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.fhg.iais.roberta.util.ArduinoIdFileHelper.loadArduinoIds;
+import static de.fhg.iais.roberta.util.ArduinoIdFileHelper.load;
 
 public class ArduinoDetector implements IDetector {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoDetector.class);
@@ -36,7 +36,7 @@ public class ArduinoDetector implements IDetector {
     private String portName = null;
 
     public ArduinoDetector() {
-        Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = loadArduinoIds();
+        Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = load();
         this.supportedRobots = loadIdsResult.getFirst();
         this.readIdFileErrors = loadIdsResult.getSecond();
     }
@@ -60,7 +60,7 @@ public class ArduinoDetector implements IDetector {
 
     @Override
     public boolean detectRobot() {
-        Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = loadArduinoIds();
+        Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = load();
         this.supportedRobots = loadIdsResult.getFirst();
         this.readIdFileErrors = loadIdsResult.getSecond();
 
