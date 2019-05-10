@@ -24,7 +24,7 @@ public class ArduinoIdFileHelper {
 
     private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
 
-    public static Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadArduinoIds() {
+    public static Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> load() {
         Map<SerialDevice, ArduinoType> supportedRobots = new HashMap<>();
         Map<Integer, String> readIdFileErrors = new HashMap<>();
 
@@ -63,13 +63,13 @@ public class ArduinoIdFileHelper {
         return new Pair<>(supportedRobots, readIdFileErrors);
     }
 
-    public static void saveArduinoIds(Iterable<List<String>> arduinoIdEntries) {
+    public static void save(Iterable<List<String>> entries) {
         File file = new File(ARDUINO_ID_FILE);
 
         Map<Integer, String> readIdFileErrors = new HashMap<>();
 
         int lineNr = 0;
-        for ( List<String> entry : arduinoIdEntries ) {
+        for ( List<String> entry : entries ) {
             String error = checkIdEntryFormat(entry);
             if ( !error.isEmpty() ) {
                 readIdFileErrors.put(lineNr++, error);
@@ -81,7 +81,7 @@ public class ArduinoIdFileHelper {
         }
 
         try (FileOutputStream os = new FileOutputStream(file); OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-            for ( List<String> entry : arduinoIdEntries ) {
+            for ( List<String> entry : entries ) {
                 writer.write(entry.get(0) + ',' + entry.get(1) + ',' + entry.get(2) + System.lineSeparator());
             }
         } catch ( FileNotFoundException e ) {

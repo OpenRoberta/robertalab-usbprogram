@@ -171,7 +171,7 @@ public class DeviceIdEditorController implements IController {
             }
 
             if ( noneRowIndex == -1 ) {
-                ArduinoIdFileHelper.saveArduinoIds(arduinoIdEntries);
+                ArduinoIdFileHelper.save(arduinoIdEntries);
 
                 DeviceIdEditorController.this.deviceIdEditorView.dispose();
             } else {

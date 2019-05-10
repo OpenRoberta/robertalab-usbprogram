@@ -183,7 +183,7 @@ class DeviceIdEditorView extends JDialog {
 
     private static List<List<Object>> getIdTableData() {
         List<List<Object>> data = new ArrayList<>();
-        for ( Entry<SerialDevice, ArduinoType> entry : ArduinoIdFileHelper.loadArduinoIds().getFirst().entrySet() ) {
+        for ( Entry<SerialDevice, ArduinoType> entry : ArduinoIdFileHelper.load().getFirst().entrySet() ) {
             data.add(createIdEntry(entry.getKey().vendorId, entry.getKey().productId, entry.getValue()));
         }
         return data;

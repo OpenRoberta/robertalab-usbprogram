@@ -129,7 +129,6 @@ public class ArduinoConnector extends AbstractConnector {
                             LOG.info("Download and run failed: {}", io.getMessage());
                             LOG.info("Do not give up yet - make the next push request");
                             this.state = State.WAIT_FOR_CMD;
-
                         }
                     } else if ( cmdKey.equals(CMD_CONFIGURATION) ) {
                         LOG.info("Configuration");
