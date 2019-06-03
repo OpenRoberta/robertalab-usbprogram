@@ -28,7 +28,7 @@ public class ServerCommunicator {
 
     private static final String PUSH_ADDRESS = "/rest/pushcmd";
     private static final String DOWNLOAD_ADDRESS = "/rest/download";
-    private static final String UPDATE_ADDRESS = "/rest/download";
+    private static final String UPDATE_ADDRESS = "/rest/update";
     private static final int CONNECT_TIMEOUT = 5000;
 
     private String serverAddress;
@@ -74,7 +74,7 @@ public class ServerCommunicator {
     private static URLConnection openURLConnection(String url, String requestMethod, Map<String, String> requestProperties) throws IOException {
         URLConnection conn;
         try {
-            if ( url.contains("localhost") ) { // workaround for HttpParser warning server side when connecting via localhost
+            if ( url.contains("localhost") || url.contains("download")) { // workaround for HttpParser warning server side when connecting via localhost
                 conn = getHttpConnection(url, requestMethod, requestProperties);
             } else {
                 conn = getHttpsConnection(url, requestMethod, requestProperties);
