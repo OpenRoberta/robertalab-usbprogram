@@ -74,7 +74,7 @@ public class ServerCommunicator {
     private static URLConnection openURLConnection(String url, String requestMethod, Map<String, String> requestProperties) throws IOException {
         URLConnection conn;
         try {
-            if ( url.contains("localhost") || url.contains("download")) { // workaround for HttpParser warning server side when connecting via localhost
+            if ( url.contains("localhost") ) { // workaround for HttpParser warning server side when connecting via localhost
                 conn = getHttpConnection(url, requestMethod, requestProperties);
             } else {
                 conn = getHttpsConnection(url, requestMethod, requestProperties);
