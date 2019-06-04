@@ -1,6 +1,7 @@
 package de.fhg.iais.roberta.util;
 
 
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ public class CustomAddressHelper {
     private static final Logger LOG = LoggerFactory.getLogger(CustomAddressHelper.class);
 
     private static final int MAX_ADDRESS_ENTRIES = 5;
-    private static final String CUSTOM_ADDRESSES_FILENAME = "customaddresses.txt";
+    private static final String CUSTOM_ADDRESSES_FILENAME = SystemUtils.getUserHome().getPath() + File.separator + "OpenRobertaUSB" + File.separator + "customaddresses.txt";
     private static final String ADDRESS_DELIMITER = " "; // colon may be used in ipv6 addresses
 
     private Deque<Pair<String, String>> addresses = new ArrayDeque<>();

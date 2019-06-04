@@ -21,7 +21,9 @@ create_linux() {
 create_windows() {
     echo "Creating Windows installers"
     cd windows
-    ./build.bat
+    "$WIX"bin/candle.exe resources.wxs setup.wxs
+    "$WIX"bin/light.exe -out OpenRobertaUSBSetupDE-$CURRENT_TAG.msi -ext WixUIExtension -cultures:de-DE setup.wixobj resources.wixobj -b ./resources
+    "$WIX"bin/light.exe -out OpenRobertaUSBSetupEN-$CURRENT_TAG.msi -ext WixUIExtension -cultures:en-US setup.wixobj resources.wixobj -b ./resources
     mv OpenRobertaUSBSetupDE-$CURRENT_TAG.msi ..
     mv OpenRobertaUSBSetupEN-$CURRENT_TAG.msi ..
 }

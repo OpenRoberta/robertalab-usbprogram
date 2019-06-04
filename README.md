@@ -1,4 +1,7 @@
 # robertalab-usbprogram
+
+[![Build Status](https://travis-ci.org/OpenRoberta/robertalab-usbprogram.svg?branch=develop)](https://travis-ci.org/OpenRoberta/robertalab-usbprogram)
+
 Standalone program for connecting robot hardware to the Open Roberta lab using
 an usb connection.
 

@@ -69,9 +69,6 @@
 					<Component Id="MainExecutable" Guid="*">
 						<File Id="OpenRobertaUSBEXE" Source="${artifactId}.exe" KeyPath="yes"/>					
 					</Component>
-					<Component Id="ArduinoIds" Guid="*">
-						<File Id="arduinoIdsTXT" Source="arduino-ids.txt" KeyPath="yes"/>	
-					</Component>
 				</Directory>
 			</Directory>
 			<Directory Id="ProgramMenuFolder" Name="Programs">
@@ -107,7 +104,6 @@
 			</Feature>
 			<Feature Id='MainProgram' Title='Description' Description='The main part of the USBProgram.' Level='1'>
 				<ComponentRef Id="MainExecutable"/>
-				<ComponentRef Id="ArduinoIds"/>
 				<ComponentRef Id="rndiscmp" />
 				<ComponentRef Id="ProgramMenuDir" />
 				<ComponentRef Id="DesktopDir" />	

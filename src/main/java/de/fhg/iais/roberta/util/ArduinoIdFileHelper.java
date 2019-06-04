@@ -1,6 +1,7 @@
 package de.fhg.iais.roberta.util;
 
 import de.fhg.iais.roberta.connection.arduino.ArduinoType;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,21 +23,22 @@ import java.util.Map;
 public class ArduinoIdFileHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoIdFileHelper.class);
 
-    private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
+    private static final String ARDUINO_ID_FILENAME = "arduino-ids.txt";
+    private static final String ARDUINO_ID_FILEPATH = SystemUtils.getUserHome().getPath() + File.separator + "OpenRobertaUSB" + File.separator + ARDUINO_ID_FILENAME;
 
     public static Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> load() {
         Map<SerialDevice, ArduinoType> supportedRobots = new HashMap<>();
         Map<Integer, String> readIdFileErrors = new HashMap<>();
 
-        File file = new File(ARDUINO_ID_FILE);
+        File file = new File(ARDUINO_ID_FILEPATH);
 
         if ( !file.exists() ) {
-            LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILE);
+            LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILEPATH);
         }
 
         try (InputStream inputStream = (file.exists()) ?
             new FileInputStream(file) :
-            ArduinoIdFileHelper.class.getClassLoader().getResourceAsStream(ARDUINO_ID_FILE);
+            ArduinoIdFileHelper.class.getClassLoader().getResourceAsStream(ARDUINO_ID_FILENAME);
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             int lineNr = 1;
@@ -54,9 +56,9 @@ public class ArduinoIdFileHelper {
                 lineNr++;
             }
         } catch ( FileNotFoundException e ) {
-            LOG.error("Could not find file {}: {}", ARDUINO_ID_FILE, e.getMessage());
+            LOG.error("Could not find file {}: {}", ARDUINO_ID_FILENAME, e.getMessage());
         } catch ( IOException e ) {
-            LOG.error("Something went wrong while loading the {} file: {}", ARDUINO_ID_FILE, e.getMessage());
+            LOG.error("Something went wrong while loading the {} file: {}", ARDUINO_ID_FILENAME, e.getMessage());
             readIdFileErrors.put(0, e.getMessage());
         }
 
@@ -64,7 +66,7 @@ public class ArduinoIdFileHelper {
     }
 
     public static void save(Iterable<List<String>> entries) {
-        File file = new File(ARDUINO_ID_FILE);
+        File file = new File(ARDUINO_ID_FILEPATH);
 
         Map<Integer, String> readIdFileErrors = new HashMap<>();
 
@@ -85,9 +87,9 @@ public class ArduinoIdFileHelper {
                 writer.write(entry.get(0) + ',' + entry.get(1) + ',' + entry.get(2) + System.lineSeparator());
             }
         } catch ( FileNotFoundException e ) {
-            LOG.error("Could not find file {}: {}", ARDUINO_ID_FILE, e.getMessage());
+            LOG.error("Could not find file {}: {}", ARDUINO_ID_FILENAME, e.getMessage());
         } catch ( IOException e ) {
-            LOG.error("Something went wrong while writing the {} file: {}", ARDUINO_ID_FILE, e.getMessage());
+            LOG.error("Something went wrong while writing the {} file: {}", ARDUINO_ID_FILENAME, e.getMessage());
         }
     }
 

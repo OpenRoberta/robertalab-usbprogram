@@ -42,6 +42,12 @@ public abstract class AbstractConnector implements IConnector {
         LOG.info("Using server address {}", this.serverAddress);
         while ( this.running ) {
             runLoopBody();
+
+            try {
+                Thread.sleep(200);
+            } catch ( InterruptedException e ) {
+                LOG.error("Interrupted!");
+            }
         }
     }
 
