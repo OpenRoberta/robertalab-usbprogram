@@ -1,8 +1,10 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.connection.arduino.Arduino;
 import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.connection.arduino.ArduinoDetector;
+import de.fhg.iais.roberta.connection.ev3.Ev3;
 import de.fhg.iais.roberta.connection.ev3.Ev3Connector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Detector;
 import de.fhg.iais.roberta.ui.main.MainController;
@@ -51,8 +53,8 @@ class UsbProgram {
 
             // Check which robots are available
             this.robotDetectorHelper.reset();
-            Robot selectedRobot = Robot.NONE;
-            while ( selectedRobot == Robot.NONE ) {
+            Robot selectedRobot = null;
+            while ( selectedRobot == null ) {
 
                 List<Robot> detectedRobots = this.robotDetectorHelper.getDetectedRobots();
                 // If only one robot is available select that one immediately
@@ -82,16 +84,15 @@ class UsbProgram {
 
             // Create the appropriate connector depending on the robot
             IConnector connector;
-            switch ( selectedRobot ) {
-                case EV3:
-                    connector = new Ev3Connector();
-                    break;
-                case ARDUINO:
-                    connector = new ArduinoConnector(this.arduinoDetector.getType(), this.arduinoDetector.getPortName());
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Selected robot not supported!");
+
+            if (selectedRobot instanceof Ev3) {
+                connector = new Ev3Connector();
+            } else if (selectedRobot instanceof Arduino) {
+                connector = new ArduinoConnector((Arduino) selectedRobot);
+            } else {
+                throw new UnsupportedOperationException("Selected robot not supported!");
             }
+
             this.controller.setConnector(connector);
             connector.run(); // Blocking until the connector is finished
 

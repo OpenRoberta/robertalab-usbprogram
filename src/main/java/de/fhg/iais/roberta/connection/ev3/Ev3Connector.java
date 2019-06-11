@@ -3,7 +3,6 @@ package de.fhg.iais.roberta.connection.ev3;
 import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.ServerCommunicator;
-import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.OraTokenGenerator;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONException;
@@ -50,27 +49,23 @@ public class Ev3Connector extends AbstractConnector {
         switch ( this.state ) {
             case DISCOVER:
                 try {
-                    if ( this.ev3comm.checkBrickState().equals("true") ) {
-                    } else if ( this.ev3comm.checkBrickState().equals("false") ) { // brick available and no program running
-                        this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
+                    if ( !this.ev3comm.isRunning() ) { // brick available and no program running
+                        this.fire(State.WAIT_FOR_CONNECT_BUTTON_PRESS);
                     }
                 } catch ( IOException e ) {
                     // ok
                 }
-                fire(this.state);
                 break;
             case WAIT_EXECUTION:
-                fire(this.state);
                 try {
-                    if ( this.ev3comm.checkBrickState().equals("true") ) {
+                    if ( this.ev3comm.isRunning() ) {
                         // program is running
-                        this.state = State.WAIT_EXECUTION;
+                        this.fire(State.WAIT_EXECUTION);
                         //fire(this.state);
-                    } else if ( this.ev3comm.checkBrickState().equals("false") ) {
+                    } else {
                         // brick available and no program running
                         LOG.info("{} EV3 plugged in again, no program running, OK", State.WAIT_EXECUTION);
-                        this.state = State.WAIT_FOR_CMD;
-                        fire(this.state);
+                        this.fire(State.WAIT_FOR_CMD);
                     }
                 } catch ( IOException e ) {
                     // ok
@@ -78,34 +73,26 @@ public class Ev3Connector extends AbstractConnector {
                 break;
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 try {
-                    if ( this.ev3comm.checkBrickState().equals("true") ) {
-                        this.state = State.DISCOVER;
-                        fire(State.DISCOVER);
-                    } else if ( this.ev3comm.checkBrickState().equals("false") ) {
-                        // wait for user
-                    }
+                    if ( this.ev3comm.isRunning() ) {
+                        this.fire(State.DISCOVER);
+                    }  // wait for user
                 } catch ( IOException e ) {
                     // ok
                 }
                 break;
             case CONNECT_BUTTON_IS_PRESSED:
                 this.token = OraTokenGenerator.generateToken();
-                this.state = State.WAIT_FOR_SERVER;
-                fire(State.WAIT_FOR_SERVER);
+                this.fire(State.WAIT_FOR_SERVER);
                 try {
                     this.brickData = this.ev3comm.pushToBrick(CMD_REGISTER);
                     this.brickData.put(KEY_TOKEN, this.token);
                     this.brickData.put(KEY_CMD, CMD_REGISTER);
                 } catch ( IOException brickerror ) {
                     LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, brickerror.getMessage());
-                    reset(State.ERROR_BRICK);
+                    this.reset(State.ERROR_BRICK);
                     break;
                 }
                 try {
-                    if ( this.state == State.DISCOVER ) {
-                        LOG.info("User is clicking connect togglebutton too fast!");
-                        break;
-                    }
                     JSONObject serverResponse = this.serverCommunicator.pushRequest(this.brickData);
                     String command = serverResponse.getString("cmd");
                     if ( command.equals(CMD_REPEAT) ) {
@@ -114,20 +101,19 @@ public class Ev3Connector extends AbstractConnector {
                             this.brickData = this.ev3comm.pushToBrick(CMD_REPEAT);
                         } catch ( IOException brickerror ) {
                             LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, brickerror.getMessage());
-                            reset(State.ERROR_BRICK);
+                            this.reset(State.ERROR_BRICK);
                             break;
                         }
-                        this.state = State.WAIT_FOR_CMD;
-                        fire(State.WAIT_FOR_CMD);
+                        this.fire(State.WAIT_FOR_CMD);
                     } else if ( command.equals(CMD_ABORT) ) {
-                        reset(State.TOKEN_TIMEOUT);
+                        this.reset(State.TOKEN_TIMEOUT);
                     } else {
                         LOG.info("{} Command {} unknown", State.CONNECT_BUTTON_IS_PRESSED, command);
-                        reset(null);
+                        this.reset(null);
                     }
                 } catch ( IOException | JSONException servererror ) {
                     LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, servererror.getMessage());
-                    reset(State.ERROR_HTTP);
+                    this.reset(State.ERROR_HTTP);
                 }
                 break;
             case WAIT_FOR_CMD:
@@ -137,64 +123,71 @@ public class Ev3Connector extends AbstractConnector {
                     this.brickData.put(KEY_CMD, CMD_PUSH);
                 } catch ( IOException brickerror ) {
                     LOG.info("{} {}", State.WAIT_FOR_CMD, brickerror.getMessage());
-                    reset(State.ERROR_BRICK);
+                    this.reset(State.ERROR_BRICK);
                     break;
                 }
-                String responseCommandFromServer;
+                String responseCommand;
                 try {
-                    responseCommandFromServer = this.serverCommunicator.pushRequest(this.brickData).getString(KEY_CMD);
+                    responseCommand = this.serverCommunicator.pushRequest(this.brickData).getString(KEY_CMD);
                 } catch ( IOException | JSONException servererror ) {
                     // continue to default block
                     LOG.info("{} Server response not ok {}", State.WAIT_FOR_CMD, servererror.getMessage());
-                    reset(State.ERROR_HTTP);
+                    this.reset(State.ERROR_HTTP);
                     break;
                 }
-                if ( responseCommandFromServer.equals(CMD_REPEAT) ) {
-                } else if ( responseCommandFromServer.equals(CMD_ABORT) ) {
+                switch ( responseCommand ) {
+                    case CMD_REPEAT:
+                        break;
+                    case CMD_ABORT:
 
-                    try {
-                        this.ev3comm.disconnectBrick();
-                    } catch ( IOException brickerror ) {
-                        LOG.info("{} Got " + CMD_ABORT + " and Brick disconnect failed {}", State.WAIT_FOR_CMD, brickerror.getMessage());
-                    }
-                    reset(null);
-                } else if ( responseCommandFromServer.equals(CMD_UPDATE) ) {
-                    LOG.info("Execute firmware update");
-                    LOG.info(this.brickData.toString());
-                    String lejosVersion = "";
-                    if ( this.brickData.getString("firmwarename").equals("ev3lejosv1") ) {
-                        lejosVersion = "v1/";
-                    }
-                    try {
-                        for ( String fwfile : this.fwfiles ) {
-                            byte[] binaryfile = this.serverCommunicator.downloadFirmwareFile(lejosVersion + fwfile);
-                            this.ev3comm.uploadFirmwareFile(binaryfile, this.serverCommunicator.getFilename());
+                        try {
+                            this.ev3comm.disconnectBrick();
+                        } catch ( IOException brickerror ) {
+                            LOG.info("{} Got " + CMD_ABORT + " and Brick disconnect failed {}", State.WAIT_FOR_CMD, brickerror.getMessage());
                         }
-                        this.ev3comm.restartBrick();
-                        LOG.info("Firmware update successful. Restarting EV3 now!");
-                        reset(null);
-                    } catch ( IOException e ) {
-                        LOG.info("{} Brick update failed {}", State.WAIT_FOR_CMD, e.getMessage());
-                        reset(State.ERROR_UPDATE);
-                    }
-                } else if ( responseCommandFromServer.equals(CMD_DOWNLOAD) ) {
-                    LOG.info("Download user program");
-                    try {
-                        byte[] binaryfile = this.serverCommunicator.downloadProgram(this.brickData);
-                        String filename = this.serverCommunicator.getFilename();
-                        this.ev3comm.uploadProgram(binaryfile, filename);
-                        this.state = State.WAIT_EXECUTION;
-                    } catch ( IOException e ) {
-                        // do not give up the brick, try another push request
-                        // user has to click on run button again
-                        LOG.info("{} Downlaod file failed {}", State.WAIT_FOR_CMD, e.getMessage());
-                        this.state = State.WAIT_FOR_CMD;
-                    }
-                } else if ( responseCommandFromServer.equals(CMD_CONFIGURATION) ) {
-                    LOG.warn("Command {} unused, ignore and continue push!", responseCommandFromServer);
-                } else {
-                    LOG.warn("Command {} unknown", responseCommandFromServer);
-                    reset(null);
+                        this.reset(null);
+                        break;
+                    case CMD_UPDATE:
+                        LOG.info("Execute firmware update");
+                        LOG.info(this.brickData.toString());
+                        String lejosVersion = "";
+                        if ( this.brickData.getString("firmwarename").equals("ev3lejosv1") ) {
+                            lejosVersion = "v1/";
+                        }
+                        try {
+                            for ( String fwfile : this.fwfiles ) {
+                                byte[] binaryfile = this.serverCommunicator.downloadFirmwareFile(lejosVersion + fwfile);
+                                this.ev3comm.uploadFirmwareFile(binaryfile, this.serverCommunicator.getFilename());
+                            }
+                            this.ev3comm.restartBrick();
+                            LOG.info("Firmware update successful. Restarting EV3 now!");
+                            this.reset(null);
+                        } catch ( IOException e ) {
+                            LOG.info("{} Brick update failed {}", State.WAIT_FOR_CMD, e.getMessage());
+                            this.reset(State.ERROR_UPDATE);
+                        }
+                        break;
+                    case CMD_DOWNLOAD:
+                        LOG.info("Download user program");
+                        try {
+                            byte[] binaryfile = this.serverCommunicator.downloadProgram(this.brickData);
+                            String filename = this.serverCommunicator.getFilename();
+                            this.ev3comm.uploadProgram(binaryfile, filename);
+                            this.fire(State.WAIT_EXECUTION);
+                        } catch ( IOException e ) {
+                            // do not give up the brick, try another push request
+                            // user has to click on run button again
+                            LOG.info("{} Downlaod file failed {}", State.WAIT_FOR_CMD, e.getMessage());
+                            this.fire(State.WAIT_FOR_CMD);
+                        }
+                        break;
+                    case CMD_CONFIGURATION:
+                        LOG.warn("Command {} unused, ignore and continue push!", responseCommand);
+                        break;
+                    default:
+                        LOG.warn("Command {} unknown", responseCommand);
+                        this.reset(null);
+                        break;
                 }
                 break;
             default:
@@ -211,8 +204,7 @@ public class Ev3Connector extends AbstractConnector {
             // ok
         }
 
-        fire(State.DISCOVER);
-        this.state = State.DISCOVER;
+        this.fire(State.DISCOVER);
     }
 
     @Override
@@ -232,15 +224,5 @@ public class Ev3Connector extends AbstractConnector {
             }
         }
         return this.brickName;
-    }
-
-    @Override
-    public void updateFirmware() {
-        this.state = State.UPDATE;
-    }
-
-    @Override
-    public Robot getRobot() {
-        return Robot.EV3;
     }
 }

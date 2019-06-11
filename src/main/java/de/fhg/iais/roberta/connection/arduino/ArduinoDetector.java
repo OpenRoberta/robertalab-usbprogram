@@ -4,6 +4,7 @@ import de.fhg.iais.roberta.connection.IDetector;
 import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.Pair;
 import de.fhg.iais.roberta.util.SerialDevice;
+import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,26 +33,10 @@ public class ArduinoDetector implements IDetector {
     private Map<SerialDevice, ArduinoType> supportedRobots;
     private Map<Integer, String> readIdFileErrors;
 
-    private ArduinoType type = ArduinoType.NONE;
-    private String portName = null;
-
     public ArduinoDetector() {
         Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = load();
         this.supportedRobots = loadIdsResult.getFirst();
         this.readIdFileErrors = loadIdsResult.getSecond();
-    }
-
-    @Override
-    public Robot getRobot() {
-        return Robot.ARDUINO;
-    }
-
-    public ArduinoType getType() {
-        return this.type;
-    }
-
-    public String getPortName() {
-        return this.portName;
     }
 
     public Map<Integer, String> getReadIdFileErrors() {
@@ -59,25 +44,23 @@ public class ArduinoDetector implements IDetector {
     }
 
     @Override
-    public boolean detectRobot() {
+    public List<Robot> detectRobots() {
+        List<Robot> detectedRobots = new ArrayList<>();
+
         Pair<Map<SerialDevice, ArduinoType>, Map<Integer, String>> loadIdsResult = load();
         this.supportedRobots = loadIdsResult.getFirst();
         this.readIdFileErrors = loadIdsResult.getSecond();
 
         List<SerialDevice> devices = getUsbDevices();
 
-        // TODO currently only returns the first arduino
         for ( SerialDevice device : devices ) {
             ArduinoType arduinoType = this.supportedRobots.get(device);
 
             if (arduinoType != null) {
-                this.type = arduinoType;
-                this.portName = device.port;
-                break;
+                detectedRobots.add(new Arduino(arduinoType, device.port));
             }
         }
-
-        return this.type != ArduinoType.NONE;
+        return detectedRobots;
     }
 
     public static List<SerialDevice> getUsbDevices() {
@@ -150,8 +133,8 @@ public class ArduinoDetector implements IDetector {
             // Output stream has to be closed to work around process buffer size hanging
             pr.getOutputStream().close();
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-                 BufferedReader errReader = new BufferedReader(new InputStreamReader(pr.getErrorStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream(), Charsets.UTF_8));
+                 BufferedReader errReader = new BufferedReader(new InputStreamReader(pr.getErrorStream(), Charsets.UTF_8))) {
                 String result = reader.lines().collect(Collectors.joining("\n"));
                 // Also read the error stream to avoid hanging
                 String errors = errReader.lines().collect(Collectors.joining("\n"));
@@ -185,7 +168,7 @@ public class ArduinoDetector implements IDetector {
             };
             Process pr = rt.exec(commands);
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream(), Charsets.UTF_8))) {
                 String result = reader.lines().collect(Collectors.joining("\n"));
 
                 Matcher idVendorMatcher = Pattern.compile("\"idVendor\" = (\\d*)").matcher(result);

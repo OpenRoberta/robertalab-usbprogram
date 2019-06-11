@@ -1,6 +1,5 @@
 package de.fhg.iais.roberta.connection;
 
-import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 
 /**
@@ -21,7 +20,6 @@ public interface IConnector extends IOraListenable<IConnector.State> {
         WAIT_EXECUTION,
         DISCONNECT,
         WAIT_FOR_SERVER,
-        UPDATE,
         UPDATE_SUCCESS,
         UPDATE_FAIL,
         ERROR_HTTP,
@@ -33,7 +31,6 @@ public interface IConnector extends IOraListenable<IConnector.State> {
 
     String KEY_TOKEN = "token";
     String KEY_CMD = "cmd";
-    String KEY_SUBTYPE = "subtype";
 
     String CMD_REGISTER = "register";
     String CMD_PUSH = "push";
@@ -43,7 +40,6 @@ public interface IConnector extends IOraListenable<IConnector.State> {
     String CMD_ABORT = "abort";
     String CMD_UPDATE = "update";
     String CMD_DOWNLOAD = "download";
-    String CMD_DOWNLOAD_RUN = "download_run";
     String CMD_CONFIGURATION = "configuration";
 
     /**
@@ -86,11 +82,6 @@ public interface IConnector extends IOraListenable<IConnector.State> {
      */
     String getBrickName();
 
-    /**
-     * In this state, the connector will download system libraries from the server, and upload it to the robot.
-     */
-    void updateFirmware();
-
     String getServerAddress();
 
     /**
@@ -104,6 +95,4 @@ public interface IConnector extends IOraListenable<IConnector.State> {
      * If gui fields are empty but advanced options is checked, use the default server address.
      */
     void resetToDefaultServerAddress();
-
-    Robot getRobot();
 }

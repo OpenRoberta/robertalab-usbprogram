@@ -1,9 +1,9 @@
 package de.fhg.iais.roberta.connection.arduino;
 
 public enum ArduinoType {
-    UNO ("uno", "Uno"),
-    MEGA ("mega", "Mega"),
-    NANO ("nano", "Nano"),
+    UNO ("uno", "Arduino Uno"),
+    MEGA ("mega", "Arduino Mega"),
+    NANO ("nano", "Arduino Nano"),
     BOB3 ("bob3", "BOB3"),
     BOTNROLL ("ardu", "Bot'n Roll"),
     MBOT ("mbot", "mBot"),
@@ -27,9 +27,9 @@ public enum ArduinoType {
     }
 
     public static ArduinoType fromString(String text) {
-        for (ArduinoType b : ArduinoType.values()) {
-            if (text.equalsIgnoreCase(b.toString())) {
-                return b;
+        for (ArduinoType type : ArduinoType.values()) {
+            if (text.equalsIgnoreCase(type.toString())) {
+                return type;
             }
         }
         throw new IllegalArgumentException("No constant with text " + text + " found");

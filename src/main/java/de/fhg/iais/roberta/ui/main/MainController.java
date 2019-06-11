@@ -1,6 +1,8 @@
 package de.fhg.iais.roberta.ui.main;
 
 import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.connection.arduino.Arduino;
+import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.ui.IController;
 import de.fhg.iais.roberta.ui.OraPopup;
 import de.fhg.iais.roberta.ui.deviceIdEditor.DeviceIdEditorController;
@@ -89,9 +91,9 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.deviceIdEditorController = new DeviceIdEditorController(rb);
     }
 
-    public void setRobotList(List<Robot> robotList) {
+    public void setRobotList(List<? extends Robot> robotList) {
         this.robotList = new ArrayList<>(robotList);
-        this.mainView.showTopRobots(this.robotList.stream().map(Enum::toString).collect(Collectors.toList()));
+        this.mainView.showTopRobots(this.robotList.stream().map(robot -> robot.getClass().getSimpleName() + ": " + robot.getName()).collect(Collectors.toList()));
     }
 
     @Override
@@ -103,7 +105,7 @@ public class MainController implements IController, IOraListenable<Robot> {
 
                 this.mainView.setWaitForConnect();
 
-                if ( this.connector.getRobot() == Robot.ARDUINO ) {
+                if ( this.connector instanceof ArduinoConnector ) {
                     this.mainView.showArduinoMenu();
                     this.mainView.setArduinoMenuText(this.connector.getBrickName());
                 }
@@ -152,14 +154,14 @@ public class MainController implements IController, IOraListenable<Robot> {
 
     @Override
     public void setConnector(IConnector connector) {
-        LOG.debug("setConnector: {}", connector.getRobot());
+        LOG.debug("setConnector: {}", connector.getClass().getSimpleName());
         this.connector = connector;
         this.connector.registerListener(this::setState);
 
         this.mainView.showTopTokenServer();
 
         // Serial monitor is only needed for arduino based robots
-        if ( connector.getRobot() == Robot.ARDUINO ) {
+        if ( connector instanceof ArduinoConnector ) {
             this.serialMonitorController = new SerialMonitorController(this.rb);
             this.serialMonitorController.setConnector(connector);
         }

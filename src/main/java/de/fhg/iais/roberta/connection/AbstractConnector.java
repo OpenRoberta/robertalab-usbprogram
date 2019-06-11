@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.util.IOraListener;
-import de.fhg.iais.roberta.util.Pair;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -90,11 +89,6 @@ public abstract class AbstractConnector implements IConnector {
     }
 
     @Override
-    public void updateFirmware() {
-        // no firmware update intended for general robots
-    }
-
-    @Override
     public String getServerAddress() {
         return this.serverCommunicator.getServerAddress();
     }
@@ -137,6 +131,7 @@ public abstract class AbstractConnector implements IConnector {
 
     @Override
     public void fire(State object) {
+        this.state = object;
         for ( IOraListener<State> listener : this.listeners ) {
             listener.update(object);
         }

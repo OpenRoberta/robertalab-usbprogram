@@ -135,7 +135,13 @@ class Ev3Communicator {
      * @return true (as string) if a program is running, false (as string) if no program is running.
      * @throws IOException should only occur if you disconnect the cable
      */
-    String checkBrickState() throws IOException {
-        return pushToBrick(IConnector.CMD_ISRUNNING).getString("isrunning");
+    boolean isRunning() throws IOException {
+        return pushToBrick(IConnector.CMD_ISRUNNING).getString("isrunning").equals("true");
+    }
+
+    String getName() throws IOException {
+        JSONObject json = pushToBrick("register");
+
+        return json.getString("brickname");
     }
 }

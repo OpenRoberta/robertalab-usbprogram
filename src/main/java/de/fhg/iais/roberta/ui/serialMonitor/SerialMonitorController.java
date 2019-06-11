@@ -35,7 +35,7 @@ public class SerialMonitorController implements IController {
 
     @Override
     public void setConnector(IConnector connector) {
-        LOG.debug("setConnector: {}", connector.getRobot());
+        LOG.debug("setConnector: {}", connector.getClass().getSimpleName());
         connector.registerListener(this::setState);
         this.portName = ((ArduinoConnector) connector).getPortName();
     }

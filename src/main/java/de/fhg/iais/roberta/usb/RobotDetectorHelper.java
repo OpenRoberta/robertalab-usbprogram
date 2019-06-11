@@ -12,7 +12,7 @@ import java.util.List;
 class RobotDetectorHelper implements IOraListener<Robot> {
     private static final Logger LOG = LoggerFactory.getLogger(RobotDetectorHelper.class);
 
-    private Robot selectedRobot = Robot.NONE;
+    private Robot selectedRobot = null;
 
     private final Collection<IDetector> detectors;
 
@@ -23,10 +23,8 @@ class RobotDetectorHelper implements IOraListener<Robot> {
     List<Robot> getDetectedRobots() {
         List<Robot> detectedRobots = new ArrayList<>();
         for ( IDetector detector : this.detectors ) {
-            LOG.info("Looking for robot: {}", detector.getRobot());
-            if (detector.detectRobot()) {
-                detectedRobots.add(detector.getRobot());
-            }
+            LOG.info("Looking for robot with {}", detector.getClass().getSimpleName());
+            detectedRobots.addAll(detector.detectRobots());
         }
         return detectedRobots;
     }
@@ -36,16 +34,11 @@ class RobotDetectorHelper implements IOraListener<Robot> {
     }
 
     void reset() {
-        this.selectedRobot = Robot.NONE;
+        this.selectedRobot = null;
     }
 
     @Override
     public void update(Robot object) {
-        boolean robotInDetectors = this.detectors.stream().anyMatch(iDetector -> iDetector.getRobot() == object);
-        if (robotInDetectors) {
-            this.selectedRobot = object;
-        } else {
-            throw new IllegalStateException("Robot of this type was not registered with this helper!");
-        }
+        this.selectedRobot = object;
     }
 }

@@ -2,16 +2,13 @@ package de.fhg.iais.roberta.connection;
 
 import de.fhg.iais.roberta.usb.Robot;
 
+import java.util.List;
+
+@FunctionalInterface
 public interface IDetector {
     /**
-     * Checks whether a robot targeted by this detector is available.
-     * @return whether a robot is available
+     * Checks whether robots targeted by this detector is available.
+     * @return a list of the available robots
      */
-    boolean detectRobot();
-
-    /**
-     * Returns the kind of robot this detector is looking for.
-     * @return the target robot of this detector
-     */
-    Robot getRobot();
+    List<Robot> detectRobots();
 }
