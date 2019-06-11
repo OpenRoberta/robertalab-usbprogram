@@ -1,6 +1,5 @@
 package de.fhg.iais.roberta.connection;
 
-import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.usb.Robot;
 import de.fhg.iais.roberta.util.IOraListenable;
 
@@ -10,7 +9,7 @@ import de.fhg.iais.roberta.util.IOraListenable;
  *
  * @author dpyka
  */
-public interface IConnector extends IOraListenable<State> {
+public interface IConnector extends IOraListenable<IConnector.State> {
 
     enum State {
         DISCOVER,
@@ -91,6 +90,8 @@ public interface IConnector extends IOraListenable<State> {
      * In this state, the connector will download system libraries from the server, and upload it to the robot.
      */
     void updateFirmware();
+
+    String getServerAddress();
 
     /**
      * Update the server communicator's address to which it will connect.

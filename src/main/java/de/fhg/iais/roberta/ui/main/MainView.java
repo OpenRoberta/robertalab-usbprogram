@@ -24,6 +24,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -34,19 +35,21 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
@@ -58,9 +61,7 @@ public class MainView extends JFrame {
     private static final Logger LOG = LoggerFactory.getLogger(MainView.class);
 
     private static final long serialVersionUID = 1L;
-    private static final int WIDTH = 330;
-    private static final int HEIGHT = 500;
-    private static final int ADVANCED_HEIGHT = 562;
+    private static final int ADDITIONAL_ADVANCED_HEIGHT = 32;
 
     static final String CMD_EXIT = "exit";
     static final String CMD_ABOUT = "about";
@@ -73,7 +74,7 @@ public class MainView extends JFrame {
     static final String CMD_ID_EDITOR = "id_editor";
     static final String CMD_COPY = "copy";
 
-    public static final String IMAGES_PATH = "images/";
+    public static final String IMAGES_PATH = "images" + File.separator;
 
     private static final Color BUTTON_FOREGROUND_COLOR = Color.WHITE;
     public static final Color BUTTON_BACKGROUND_COLOR = Color.decode("#b7d032"); // light lime green
@@ -133,7 +134,7 @@ public class MainView extends JFrame {
         UIManager.put("ScrollPane.background", BACKGROUND_COLOR);
 
         // CMD + C support for copying on Mac OS
-        if ( SystemUtils.IS_OS_MAC_OSX) {
+        if ( SystemUtils.IS_OS_MAC_OSX ) {
             InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
@@ -141,7 +142,7 @@ public class MainView extends JFrame {
         }
     }
 
-    // Menu
+    // ---- Menu ----
     private final JMenuBar menu = new JMenuBar();
 
     private final JMenu menuFile = new JMenu();
@@ -156,30 +157,59 @@ public class MainView extends JFrame {
 
     private final RobotButton butRobot = new RobotButton();
 
-    // Center panel
+    // --- Center ---
     private final JPanel pnlCenter = new JPanel();
 
-    private final JSeparator sep = new JSeparator();
+    private final JSeparator separator = new JSeparator();
 
-    private final JLabel lblSelection = new JLabel();
-    private final JList<String> listRobots = new JList<>();
+    // -- Top --
+    private final JPanel pnlTopContainer = new JPanel();
+
+    // - Robots -
+    private static final String CARD_ROBOTS = "robots";
+    private final JPanel pnlRobots = new JPanel();
+
+    private final JPanel pnlAvailable = new JPanel();
+    private final JLabel lblAvailable = new JLabel();
+
+    private final JScrollPane scrollPaneRobots = new JScrollPane();
+    private final JList<String> listRobots = new JList<>(new String[]{""});
+
+    // - Token Server -
+    private static final String CARD_TOKEN_SERVER = "tokenServer";
+    private final JPanel pnlTokenServer = new JPanel();
 
     private final JPanel pnlToken = new JPanel();
     private final JTextField txtFldPreToken = new JTextField();
     private final JTextField txtFldToken = new JTextField();
     private final OraButton butCopy = new OraButton();
 
-    private final JPanel pnlMainGif = new JPanel();
-    private final JLabel lblMainGif = new JLabel();
+    private final JPanel pnlServer = new JPanel();
+    private final JTextField txtFldServer = new JTextField();
 
+    // - Top Empty -
+    private static final String CARD_TOP_EMPTY = "topEmpty";
+
+    // -- Gif --
+    private final JPanel pnlGif = new JPanel();
+    private final JLabel lblGif = new JLabel();
+
+    // -- Info --
     private final JTextArea txtAreaInfo = new JTextArea();
 
-    private final JPanel pnlButton = new JPanel();
+    // -- Buttons --
+    private final JPanel pnlButtons = new JPanel();
     private final OraToggleButton butConnect = new OraToggleButton();
     private final OraToggleButton butScan = new OraToggleButton();
     private final OraButton butClose = new OraButton();
 
-    // Custom panel
+    // -- Custom --
+    private final JPanel pnlCustomContainer = new JPanel();
+
+    // - Address -
+    private static final String CARD_ADDRESS = "address";
+    private final JPanel pnlAddress = new JPanel();
+
     private final JPanel pnlCustomInfo = new JPanel();
     private final JButton butCustom = new JButton();
 
@@ -192,14 +222,21 @@ public class MainView extends JFrame {
     private final JLabel lblCustomPort = new JLabel();
     private final JComboBox<String> cmbBoxCustomPort = new JComboBox<>();
 
+    // - Custom Empty -
+    private static final String CARD_CUSTOM_EMPTY = "customEmpty";
+
     // Resources
     public static final ImageIcon ICON_TITLE = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "OR.png")));
     private static final Icon GIF_PLUG = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "plug.gif")));
     private static final Icon GIF_CONNECT = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "connect.gif")));
     private static final Icon GIF_SERVER = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "server.gif")));
     private static final Icon GIF_CONNECTED = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "connected.gif")));
-    private static final Icon ARROW_DOWN = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-down.png")));
-    private static final Icon ARROW_UP = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-up.png")));
+    private static final Icon
+        ARROW_DOWN =
+        new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-down.png")));
+    private static final Icon
+        ARROW_UP =
+        new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "arrow-sorted-up.png")));
     private static final Icon CLIPBOARD = new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "clipboard.png")));
     private final ResourceBundle messages;
 
@@ -217,12 +254,23 @@ public class MainView extends JFrame {
         this.setActionListener(listener);
     }
 
+    private void initGUI() {
+        this.initGeneralGUI();
+        this.initMenuGUI();
+        this.initCenterGUI();
+
+        this.pack();
+        // center on desktop
+        this.setLocationRelativeTo(null);
+
+        // hide the address fields at start
+        this.hideAddressFields();
+    }
+
     private void initGeneralGUI() {
         // General
-        this.setSize(WIDTH, HEIGHT);
         this.setResizable(false);
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        this.setLocationRelativeTo(null);
 
         // Titlebar
         this.setIconImage(ICON_TITLE.getImage());
@@ -266,28 +314,74 @@ public class MainView extends JFrame {
         this.butRobot.setActionCommand(CMD_HELP);
     }
 
-    private void initCenterPanelGUI() {
+    private void initCenterGUI() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+
+        this.add(panel);
+
+        // Separator
+        panel.add(this.separator);
+
         // General
-        this.add(this.pnlCenter, BorderLayout.CENTER);
-        this.pnlCenter.setLayout(new BoxLayout(this.pnlCenter, BoxLayout.PAGE_AXIS));
+        panel.add(this.pnlCenter, BorderLayout.CENTER);
+        this.pnlCenter.setLayout(new GridBagLayout());
+        this.pnlCenter.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.gridx = 0;
+        constraints.weightx = 1.0;
 
-        // Seperator
-        this.pnlCenter.add(this.sep);
-        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,25)));
+        constraints.gridy = 0;
+        this.initTopGUI(constraints);
 
-        // Robotlist
-        this.pnlCenter.add(this.lblSelection);
-        this.lblSelection.setText(this.messages.getString("listInfo"));
-        this.lblSelection.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        this.lblSelection.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-        this.lblSelection.setBorder(BorderFactory.createEmptyBorder(0, 12, 10, 12));
+        constraints.gridy = 1;
+        this.initMainGifGUI(constraints);
 
-        this.pnlCenter.add(this.listRobots);
-        this.listRobots.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-        this.listRobots.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        constraints.gridy = 2;
+        this.initTextInfoGUI(constraints);
+
+        constraints.gridy = 3;
+        this.initButtonGUI(constraints);
+
+        constraints.gridy = 4;
+        this.initCustomGUI(constraints);
+    }
+
+    private void initTopGUI(GridBagConstraints constraints) {
+        // Top container
+        this.pnlCenter.add(this.pnlTopContainer, constraints);
+        this.pnlTopContainer.setLayout(new CardLayout());
+        this.pnlTopContainer.setPreferredSize(new Dimension(0, 100));
+
+        this.initRobotListGUI();
+        this.initTokenServerGUI();
+
+        this.pnlTopContainer.add(new JPanel(), CARD_TOP_EMPTY);
+    }
+
+    private void initRobotListGUI() {
+        this.pnlTopContainer.add(this.pnlRobots, CARD_ROBOTS);
+        this.pnlRobots.setLayout(new BoxLayout(this.pnlRobots, BoxLayout.PAGE_AXIS));
+
+        // Info label
+        this.pnlRobots.add(this.pnlAvailable);
+        this.pnlAvailable.setLayout(new FlowLayout(FlowLayout.LEADING));
+        this.pnlAvailable.add(this.lblAvailable);
+        this.lblAvailable.setText(this.messages.getString("listInfo"));
+
+        // Robots
+        this.pnlRobots.add(this.scrollPaneRobots);
+        this.scrollPaneRobots.setViewportView(this.listRobots);
+    }
+
+    private void initTokenServerGUI() {
+        // Token and Server panel
+        this.pnlTopContainer.add(this.pnlTokenServer, CARD_TOKEN_SERVER);
+        this.pnlTokenServer.setLayout(new BoxLayout(this.pnlTokenServer, BoxLayout.PAGE_AXIS));
 
         // Token panel
-        this.pnlCenter.add(this.pnlToken);
+        this.pnlTokenServer.add(this.pnlToken);
 
         this.pnlToken.add(this.txtFldPreToken);
         this.txtFldPreToken.setFont(FONT.deriveFont(18.0f));
@@ -301,64 +395,84 @@ public class MainView extends JFrame {
 
         this.pnlToken.add(this.butCopy);
         this.butCopy.setIcon(CLIPBOARD);
-        this.butCopy.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
+        this.butCopy.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.butCopy.setActionCommand(CMD_COPY);
 
+        // Server panel
+        this.pnlTokenServer.add(this.pnlServer);
+
+        this.pnlServer.add(this.txtFldServer);
+        this.txtFldServer.setBorder(BorderFactory.createEmptyBorder());
+        this.txtFldServer.setEditable(false);
+    }
+
+    private void initMainGifGUI(GridBagConstraints constraints) {
         // Main gif panel
-        this.pnlCenter.add(this.pnlMainGif);
+        this.pnlCenter.add(this.pnlGif, constraints);
 
-        this.pnlMainGif.add(this.lblMainGif);
+        this.pnlGif.add(this.lblGif);
+        this.pnlGif.setPreferredSize(new Dimension(GIF_CONNECT.getIconWidth(), GIF_CONNECT.getIconHeight()));
+    }
 
-        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
-
+    private void initTextInfoGUI(GridBagConstraints constraints) {
         // Info texts
-        this.pnlCenter.add(this.txtAreaInfo);
-        this.txtAreaInfo.setText(Locale.getDefault().getLanguage());
+        this.pnlCenter.add(this.txtAreaInfo, constraints);
         this.txtAreaInfo.setLineWrap(true);
         this.txtAreaInfo.setWrapStyleWord(true);
         this.txtAreaInfo.setMargin(new Insets(8, 16, 8, 16));
         this.txtAreaInfo.setEditable(false);
+        this.txtAreaInfo.setPreferredSize(new Dimension(0, 100));
+    }
 
+    private void initButtonGUI(GridBagConstraints constraints) {
         // Button panel
-        this.pnlCenter.add(this.pnlButton);
-        this.pnlButton.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
-        this.pnlButton.setLayout(new FlowLayout(FlowLayout.LEADING));
+        this.pnlCenter.add(this.pnlButtons, constraints);
+        this.pnlButtons.setLayout(new FlowLayout(FlowLayout.LEADING, 12, 0));
 
-        this.pnlButton.add(this.butConnect);
+        this.pnlButtons.add(this.butConnect);
+        this.butConnect.setText(this.messages.getString("connect"));
+        this.butConnect.setActionCommand(CMD_CONNECT);
 
-        this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
-        this.pnlButton.add(this.butScan);
+        this.pnlButtons.add(this.butScan);
         this.butScan.setText(this.messages.getString("scan"));
         this.butScan.setActionCommand(CMD_SCAN);
 
-        this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
-        this.pnlButton.add(this.butClose);
+        this.pnlButtons.add(this.butClose);
         this.butClose.setText(this.messages.getString("exit"));
         this.butClose.setActionCommand(CMD_EXIT);
-
-        this.pnlCenter.add(Box.createRigidArea(new Dimension(0, 20)));
     }
 
-    private void initCustomPanelGUI() {
+    private void initCustomGUI(GridBagConstraints constraints) {
+        this.pnlCenter.add(this.pnlCustomContainer, constraints);
+        this.pnlCustomContainer.setLayout(new CardLayout());
+
+        this.initAddressGUI();
+
+        this.pnlCustomContainer.add(new JPanel(), CARD_CUSTOM_EMPTY);
+    }
+
+    private void initAddressGUI() {
         // Custom info panel
-        this.pnlCenter.add(this.pnlCustomInfo);
-        this.pnlCustomInfo.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 12));
+        this.pnlCustomContainer.add(this.pnlAddress, CARD_ADDRESS);
+
+        this.pnlAddress.setLayout(new BoxLayout(this.pnlAddress, BoxLayout.PAGE_AXIS));
+
+        this.pnlAddress.add(this.pnlCustomInfo);
         this.pnlCustomInfo.setLayout(new FlowLayout(FlowLayout.LEADING));
 
         this.pnlCustomInfo.add(this.butCustom);
         this.butCustom.setActionCommand("customaddress");
         this.butCustom.setIcon(ARROW_DOWN);
         this.butCustom.setText(this.messages.getString("checkCustomDesc"));
-        this.butCustom.setBorderPainted( false );
+        this.butCustom.setBorderPainted(false);
         this.butCustom.setBackground(Color.WHITE);
         this.butCustom.setFocusPainted(false);
         this.butCustom.setContentAreaFilled(false);
         this.butCustom.setForeground(this.lblCustomIp.getForeground());
-        this.butCustom.setMargin(new Insets(0,0,0,0));
+        this.butCustom.setMargin(new Insets(0, 0, 0, 0));
 
         // Custom heading panel
-        this.pnlCenter.add(this.pnlCustomHeading);
-        this.pnlCustomHeading.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlAddress.add(this.pnlCustomHeading);
         this.pnlCustomHeading.setLayout(new FlowLayout(FlowLayout.LEADING));
 
         this.pnlCustomHeading.add(this.txtFldCustomHeading);
@@ -367,8 +481,7 @@ public class MainView extends JFrame {
         this.txtFldCustomHeading.setText(this.messages.getString("customDesc"));
 
         // Custom address panel
-        this.pnlCenter.add(this.pnlCustomAddress);
-        this.pnlCustomAddress.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlAddress.add(this.pnlCustomAddress);
         this.pnlCustomAddress.setLayout(new FlowLayout(FlowLayout.LEADING));
 
         this.pnlCustomAddress.add(this.lblCustomIp);
@@ -379,7 +492,7 @@ public class MainView extends JFrame {
         this.cmbBoxCustomIp.setEditable(true);
         this.cmbBoxCustomIp.setPreferredSize(new Dimension(146, 25));
         this.cmbBoxCustomIp.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        ((JComponent) this.cmbBoxCustomIp.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0,4,0,4));
+        ((JComponent) this.cmbBoxCustomIp.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 
         this.pnlCustomAddress.add(this.lblCustomPort);
         this.lblCustomPort.setBorder(null);
@@ -389,32 +502,10 @@ public class MainView extends JFrame {
         this.cmbBoxCustomPort.setEditable(true);
         this.cmbBoxCustomPort.setPreferredSize(new Dimension(70, 25));
         this.cmbBoxCustomPort.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        ((JComponent) this.cmbBoxCustomPort.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0,4,0,4));
-
-        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
+        ((JComponent) this.cmbBoxCustomPort.getComponent(0)).setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
     }
 
-    private void initGUI() {
-        this.initGeneralGUI();
-        this.initMenuGUI();
-        this.initCenterPanelGUI();
-        this.initCustomPanelGUI();
-
-        this.hideRobotList();
-        this.hideCustom();
-        this.hideArduinoMenu();
-    }
-
-    private void hideCustom() {
-        this.pnlCustomHeading.setVisible(false);
-        this.pnlCustomAddress.setVisible(false);
-    }
-
-    private void showCustom() {
-        this.pnlCustomHeading.setVisible(true);
-        this.pnlCustomAddress.setVisible(true);
-    }
-
+    // Listeners
     private void setActionListener(ActionListener listener) {
         this.menuItemIdEditor.addActionListener(listener);
         this.menuItemClose.addActionListener(listener);
@@ -436,12 +527,14 @@ public class MainView extends JFrame {
         this.listRobots.addListSelectionListener(listener);
     }
 
+    // States
     void setWaitForConnect() {
         this.butRobot.setState(DISCOVERED);
         this.butConnect.setEnabled(true);
         this.butScan.setEnabled(true);
         this.txtAreaInfo.setText(this.messages.getString("connectInfo"));
-        this.lblMainGif.setIcon(GIF_CONNECT);
+        this.lblGif.setIcon(GIF_CONNECT);
+        this.showTopTokenServer();
     }
 
     void setWaitExecution() {
@@ -459,13 +552,14 @@ public class MainView extends JFrame {
         this.butConnect.setActionCommand(CMD_DISCONNECT);
         this.butRobot.setState(CONNECTED);
         this.txtAreaInfo.setText(this.messages.getString("serverInfo"));
-        this.lblMainGif.setIcon(GIF_CONNECTED);
+        this.lblGif.setIcon(GIF_CONNECTED);
     }
 
     void setDiscover() {
         this.txtFldPreToken.setText("");
         this.txtFldToken.setText("");
         this.butCopy.setVisible(false);
+        this.txtFldServer.setText("");
         this.butRobot.setState(NOT_DISCOVERED);
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
@@ -474,8 +568,10 @@ public class MainView extends JFrame {
         this.butScan.setEnabled(false);
         this.butScan.setSelected(false);
         this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
-        this.lblMainGif.setIcon(GIF_PLUG);
+        this.lblGif.setIcon(GIF_PLUG);
         this.hideArduinoMenu();
+        this.showTopEmpty();
+        this.showCustomAddress();
     }
 
     void setWaitForServer() {
@@ -483,7 +579,7 @@ public class MainView extends JFrame {
         this.butConnect.setEnabled(false);
     }
 
-    void setNew(String prefix, String token, boolean showCopy) {
+    void setNew(String prefix, String token, String serverAddress, boolean showCopy) {
         this.butScan.setEnabled(false);
         this.txtFldPreToken.setText(prefix);
         this.txtFldToken.setText(token);
@@ -491,24 +587,26 @@ public class MainView extends JFrame {
         this.txtFldPreToken.setPreferredSize(null);
         this.txtFldToken.setPreferredSize(null);
         // Add one pixel width to remove small scrolling
-        this.txtFldPreToken.setPreferredSize(new Dimension((int) this.txtFldPreToken.getPreferredSize().getWidth() + 1, (int) this.txtFldPreToken.getPreferredSize().getHeight()));
-        this.txtFldToken.setPreferredSize(new Dimension((int) this.txtFldToken.getPreferredSize().getWidth() + 1, (int) this.txtFldToken.getPreferredSize().getHeight()));
+        this.txtFldPreToken.setPreferredSize(new Dimension((int) this.txtFldPreToken.getPreferredSize().getWidth() + 1,
+            (int) this.txtFldPreToken.getPreferredSize().getHeight()));
+        this.txtFldToken.setPreferredSize(new Dimension((int) this.txtFldToken.getPreferredSize().getWidth() + 1,
+            (int) this.txtFldToken.getPreferredSize().getHeight()));
         this.butCopy.setVisible(showCopy);
+
+        // strip default port from serverAddress
+        String servAddress = serverAddress.replace(":443", "");
+
+        this.txtFldServer.setText(this.messages.getString("connectedTo") + ' ' + servAddress);
         this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
-        this.lblMainGif.setIcon(GIF_SERVER);
+        this.lblGif.setIcon(GIF_SERVER);
+
+        // dont show advanced options anymore
+        this.showCustomEmpty();
     }
 
-    void showRobotList(List<String> robotNames) {
-        this.lblSelection.setVisible(true);
-        this.listRobots.setVisible(true);
-        this.listRobots.setListData(robotNames.toArray(new String[0]));
-    }
+    // Individual settings and functions
 
-    void hideRobotList() {
-        this.lblSelection.setVisible(false);
-        this.listRobots.setVisible(false);
-    }
-
+    // Arduino
     void showArduinoMenu() {
         this.menuArduino.setVisible(true);
     }
@@ -521,46 +619,81 @@ public class MainView extends JFrame {
         this.menuArduino.setText(text);
     }
 
-    public void toggleAdvancedOptions() {
-        if (!this.customMenuVisible ) {
-            this.setSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
-            this.setPreferredSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
-            this.showCustom();
-            this.butCustom.setIcon(ARROW_UP);
-            this.customMenuVisible = true;
-        } else {
-            this.setSize(new Dimension(WIDTH, HEIGHT));
-            this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-            this.hideCustom();
+    // Top
+    void showTopRobots(List<String> robotNames) {
+        this.listRobots.setListData(robotNames.toArray(new String[0]));
+        CardLayout cl = (CardLayout) this.pnlTopContainer.getLayout();
+        cl.show(this.pnlTopContainer, CARD_ROBOTS);
+    }
+
+    void showTopTokenServer() {
+        CardLayout cl = (CardLayout) this.pnlTopContainer.getLayout();
+        cl.show(this.pnlTopContainer, CARD_TOKEN_SERVER);
+    }
+
+    private void showTopEmpty() {
+        CardLayout cl = (CardLayout) this.pnlTopContainer.getLayout();
+        cl.show(this.pnlTopContainer, CARD_TOP_EMPTY);
+    }
+
+    // Custom
+    private void showCustomAddress() {
+        CardLayout cl = (CardLayout) this.pnlCustomContainer.getLayout();
+        cl.show(this.pnlCustomContainer, CARD_ADDRESS);
+    }
+
+    private void showCustomEmpty() {
+        CardLayout cl = (CardLayout) this.pnlCustomContainer.getLayout();
+        cl.show(this.pnlCustomContainer, CARD_CUSTOM_EMPTY);
+    }
+
+    private void hideAddressFields() {
+        this.pnlCustomHeading.setVisible(false);
+        this.pnlCustomAddress.setVisible(false);
+    }
+
+    private void showAddressFields() {
+        this.pnlCustomHeading.setVisible(true);
+        this.pnlCustomAddress.setVisible(true);
+    }
+
+    void toggleAdvancedOptions() {
+        Dimension size = this.getSize();
+
+        if ( this.customMenuVisible ) {
+            size.height -= ADDITIONAL_ADVANCED_HEIGHT;
+            this.setSize(size);
+            this.hideAddressFields();
             this.butCustom.setIcon(ARROW_DOWN);
             this.customMenuVisible = false;
+        } else {
+            size.height += ADDITIONAL_ADVANCED_HEIGHT;
+            this.setSize(size);
+            this.showAddressFields();
+            this.butCustom.setIcon(ARROW_UP);
+            this.customMenuVisible = true;
         }
-        this.revalidate();
     }
 
-    void setConnectButtonText(String text) {
-        this.butConnect.setText(text);
-    }
-
-    public boolean isCustomAddressSelected() {
+    boolean isCustomAddressSelected() {
         return this.customMenuVisible;
     }
 
-    public Pair<String, String> getCustomAddress() {
+    Pair<String, String> getCustomAddress() {
         String ip = (String) this.cmbBoxCustomIp.getSelectedItem();
         String port = (String) this.cmbBoxCustomPort.getSelectedItem();
 
-        if (ip == null) {
+        if ( ip == null ) {
             ip = "";
         }
-        if (port == null) {
+        if ( port == null ) {
             port = "";
         }
 
         return new Pair<>(ip, port);
     }
 
-    public void setCustomAddresses(Iterable<Pair<String, String>> addresses) {
+    void setCustomAddresses(Iterable<? extends Pair<String, String>> addresses) {
         this.cmbBoxCustomIp.removeAllItems();
         this.cmbBoxCustomPort.removeAllItems();
         for ( Pair<String, String> address : addresses ) {
@@ -569,7 +702,12 @@ public class MainView extends JFrame {
         }
     }
 
-    public Point getRobotButtonLocation() {
+    // Other
+    void setConnectButtonText(String text) {
+        this.butConnect.setText(text);
+    }
+
+    Point getRobotButtonLocation() {
         return new Point(this.butRobot.getLocationOnScreen().x + this.butRobot.getWidth(), this.butRobot.getLocationOnScreen().y);
     }
 }

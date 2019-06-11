@@ -41,6 +41,10 @@ public class ServerCommunicator {
         this.serverAddress = serverAddress;
     }
 
+    public String getServerAddress() {
+        return this.serverAddress;
+    }
+
     public void setServerAddress(String serverAddress) {
         this.serverAddress = serverAddress;
     }

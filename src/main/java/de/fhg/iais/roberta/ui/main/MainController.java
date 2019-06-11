@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.ui.main;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.ui.IController;
 import de.fhg.iais.roberta.ui.OraPopup;
 import de.fhg.iais.roberta.ui.deviceIdEditor.DeviceIdEditorController;
@@ -22,8 +21,10 @@ import java.awt.Desktop;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
@@ -60,7 +60,7 @@ public class MainController implements IController, IOraListenable<Robot> {
     private final ResourceBundle rb;
     private final MainView mainView;
 
-    private CustomAddressHelper addresses = new CustomAddressHelper();
+    private final CustomAddressHelper addresses = new CustomAddressHelper();
 
     // For the robot selection if there is more than one robot available
     private List<Robot> robotList = null;
@@ -76,13 +76,13 @@ public class MainController implements IController, IOraListenable<Robot> {
     private final HelpDialog helpDialog;
 
     public MainController(ResourceBundle rb) {
-        MainViewListener mainViewListener = new MainViewListener();
+        MainController.MainViewListener mainViewListener = new MainController.MainViewListener();
         this.mainView = new MainView(rb, mainViewListener);
         this.mainView.setVisible(true);
         this.rb = rb;
         this.connected = false;
 
-        this.mainView.setCustomAddresses(addresses.get());
+        this.mainView.setCustomAddresses(this.addresses.get());
 
         this.helpDialog = new HelpDialog(this.mainView, rb, mainViewListener);
 
@@ -91,11 +91,11 @@ public class MainController implements IController, IOraListenable<Robot> {
 
     public void setRobotList(List<Robot> robotList) {
         this.robotList = new ArrayList<>(robotList);
-        this.mainView.showRobotList(this.robotList.stream().map(Enum::toString).collect(Collectors.toList()));
+        this.mainView.showTopRobots(this.robotList.stream().map(Enum::toString).collect(Collectors.toList()));
     }
 
     @Override
-    public void setState(State state) {
+    public void setState(IConnector.State state) {
         LOG.info("Setting state to {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
@@ -109,39 +109,41 @@ public class MainController implements IController, IOraListenable<Robot> {
                 }
                 break;
             case WAIT_FOR_SERVER:
-                this.mainView.setNew(this.rb.getString("token"), this.connector.getToken(), true);
+                this.mainView.setNew(this.rb.getString("token"), this.connector.getToken(), this.connector.getServerAddress(), true);
                 this.mainView.setWaitForServer();
                 break;
             case RECONNECT:
                 this.mainView.setConnectButtonText(this.rb.getString("disconnect"));
             case WAIT_FOR_CMD:
                 this.connected = true;
-                this.mainView.setNew(this.rb.getString("name"), this.connector.getBrickName(), false);
+                this.mainView.setNew(this.rb.getString("name"), this.connector.getBrickName(), this.connector.getServerAddress(), false);
                 this.mainView.setWaitForCmd();
                 break;
+            case WAIT_UPLOAD:
+                break;
             case DISCOVER:
-                setDiscover();
+                this.setDiscover();
                 break;
             case WAIT_EXECUTION:
                 this.mainView.setWaitExecution();
                 break;
             case UPDATE_SUCCESS:
-                showAttentionPopup("restartInfo", "");
+                this.showAttentionPopup("restartInfo", "");
                 break;
             case UPDATE_FAIL:
-                showAttentionPopup("updateFail", "");
+                this.showAttentionPopup("updateFail", "");
                 break;
             case ERROR_HTTP:
-                showAttentionPopup("httpErrorInfo", "");
+                this.showAttentionPopup("httpErrorInfo", "");
                 break;
             case ERROR_DOWNLOAD:
-                showAttentionPopup("downloadFail", "");
+                this.showAttentionPopup("downloadFail", "");
                 break;
             case ERROR_BRICK:
-                showAttentionPopup("httpBrickInfo", "");
+                this.showAttentionPopup("httpBrickInfo", "");
                 break;
             case TOKEN_TIMEOUT:
-                showAttentionPopup("tokenTimeout", "");
+                this.showAttentionPopup("tokenTimeout", "");
                 break;
             default:
                 break;
@@ -154,7 +156,7 @@ public class MainController implements IController, IOraListenable<Robot> {
         this.connector = connector;
         this.connector.registerListener(this::setState);
 
-        this.mainView.hideRobotList();
+        this.mainView.showTopTokenServer();
 
         // Serial monitor is only needed for arduino based robots
         if ( connector.getRobot() == Robot.ARDUINO ) {
@@ -166,22 +168,17 @@ public class MainController implements IController, IOraListenable<Robot> {
     public void showConfigErrorPopup(Map<Integer, String> errors) {
         StringBuilder sb = new StringBuilder(200);
         sb.append(System.lineSeparator());
-        for ( Entry<Integer, String> entry : errors.entrySet() ) {
+        for ( Map.Entry<Integer, String> entry : errors.entrySet() ) {
             sb.append("Line ").append(entry.getKey()).append(": ").append(this.rb.getString(entry.getValue())).append(System.lineSeparator());
         }
         LOG.error("Errors in config file:{}", sb);
 
-        showAttentionPopup("errorReadConfig", sb.toString());
+        this.showAttentionPopup("errorReadConfig", sb.toString());
     }
 
     public void showHelp() {
         this.helpDialog.setLocation(this.mainView.getRobotButtonLocation());
         this.helpDialog.setVisible(true);
-    }
-
-    private void toggleHelp() {
-        this.helpDialog.setLocation(this.mainView.getRobotButtonLocation());
-        this.helpDialog.setVisible(!this.helpDialog.isVisible());
     }
 
     private void setDiscover() {
@@ -217,37 +214,37 @@ public class MainController implements IController, IOraListenable<Robot> {
             LOG.info("User performed action {}", e.getActionCommand());
             switch ( e.getActionCommand() ) {
                 case CMD_EXIT:
-                    closeApplication();
+                    this.closeApplication();
                     break;
                 case CMD_ABOUT:
-                    showAboutPopup();
+                    this.showAboutPopup();
                     break;
                 case CMD_CUSTOMADDRESS:
                     MainController.this.mainView.toggleAdvancedOptions();
                     break;
                 case CMD_SCAN:
                     MainController.this.connector.interrupt();
-                    setDiscover();
+                    MainController.this.setDiscover();
                     break;
                 case CMD_SERIAL:
                     MainController.this.serialMonitorController.showSerialMonitor();
                     break;
                 case CMD_CONNECT:
-                    checkForValidCustomServerAddressAndUpdate();
+                    this.checkForValidCustomServerAddressAndUpdate();
                     MainController.this.connector.userPressConnectButton();
                     break;
                 case CMD_DISCONNECT:
                     MainController.this.connector.userPressDisconnectButton();
                     break;
                 case CMD_HELP:
-                    toggleHelp();
+                    this.toggleHelp();
                     break;
                 case CMD_ID_EDITOR:
                     MainController.this.deviceIdEditorController.showEditor();
-                    if (MainController.this.connector != null) {
+                    if ( MainController.this.connector != null ) {
                         MainController.this.connector.interrupt();
                     }
-                    setDiscover();
+                    MainController.this.setDiscover();
                     break;
                 case CMD_SELECT_EV3:
                     MainController.this.helpDialog.dispose();
@@ -260,16 +257,16 @@ public class MainController implements IController, IOraListenable<Robot> {
                 case CMD_SELECT_OTHER:
                     MainController.this.helpDialog.dispose();
                     MainController.this.deviceIdEditorController.showEditor();
-                    if (MainController.this.connector != null) {
+                    if ( MainController.this.connector != null ) {
                         MainController.this.connector.interrupt();
                     }
-                    setDiscover();
+                    MainController.this.setDiscover();
                     break;
                 case CMD_CLOSE_HELP:
                     MainController.this.helpDialog.dispose();
                     break;
                 case CMD_COPY:
-                    StringSelection stringSelection = new StringSelection(connector.getToken());
+                    Transferable stringSelection = new StringSelection(MainController.this.connector.getToken());
                     Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                     clipboard.setContents(stringSelection, null);
                     break;
@@ -281,7 +278,7 @@ public class MainController implements IController, IOraListenable<Robot> {
         @Override
         public void windowClosing(WindowEvent e) {
             LOG.info("User closed main window");
-            closeApplication();
+            this.closeApplication();
         }
 
         // Sends event to all listeners waiting for the robot selection event when a robot was selected
@@ -290,15 +287,22 @@ public class MainController implements IController, IOraListenable<Robot> {
             LOG.debug("valueChanged: {}", e.getFirstIndex());
             JList<?> source = (JList<?>) e.getSource();
             source.clearSelection();
-            fire(MainController.this.robotList.get(e.getFirstIndex()));
+            MainController.this.fire(MainController.this.robotList.get(e.getFirstIndex()));
         }
 
         private void showAboutPopup() {
-            OraPopup.showPopup(MainController.this.mainView,
+            OraPopup.showPopup(
+                MainController.this.mainView,
                 MainController.this.rb.getString("about"),
                 MainController.this.rb.getString("aboutInfo"),
-                new ImageIcon(new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource("images/iais_logo.gif"))).getImage()
-                    .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+                new ImageIcon(new ImageIcon(Objects.requireNonNull(this.getClass()
+                    .getClassLoader()
+                    .getResource("images" + File.separator + "iais_logo.gif"))).getImage().getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+        }
+
+        private void toggleHelp() {
+            MainController.this.helpDialog.setLocation(MainController.this.mainView.getRobotButtonLocation());
+            MainController.this.helpDialog.setVisible(!MainController.this.helpDialog.isVisible());
         }
 
         private void checkForValidCustomServerAddressAndUpdate() {
@@ -316,14 +320,14 @@ public class MainController implements IController, IOraListenable<Robot> {
                         LOG.info("Valid custom ip {}, using default ports", ip);
                         MainController.this.connector.updateCustomServerAddress(ip);
                         MainController.this.addresses.add(address);
-                        MainController.this.mainView.setCustomAddresses(addresses.get());
+                        MainController.this.mainView.setCustomAddresses(MainController.this.addresses.get());
                     } else {
                         if ( CustomAddressHelper.validatePort(port) ) {
                             String formattedAddress = ip + ':' + port;
                             LOG.info("Valid custom address {}", formattedAddress);
                             MainController.this.connector.updateCustomServerAddress(formattedAddress);
                             MainController.this.addresses.add(address);
-                            MainController.this.mainView.setCustomAddresses(addresses.get());
+                            MainController.this.mainView.setCustomAddresses(MainController.this.addresses.get());
                         } else {
                             LOG.warn("Invalid port {}", port);
                         }
@@ -336,15 +340,16 @@ public class MainController implements IController, IOraListenable<Robot> {
 
         private void closeApplication() {
             LOG.debug("closeApplication");
-            addresses.save();
+            MainController.this.addresses.save();
             if ( MainController.this.connected ) {
                 String[] buttons = {
                     MainController.this.rb.getString("exit"), MainController.this.rb.getString("cancel")
                 };
-                int n = OraPopup.showPopup(MainController.this.mainView,
+                int n = OraPopup.showPopup(
+                    MainController.this.mainView,
                     MainController.this.rb.getString("attention"),
                     MainController.this.rb.getString("confirmCloseInfo"),
-                    new ImageIcon(Objects.requireNonNull(getClass().getClassLoader().getResource(IMAGES_PATH + "Roberta.png"))),
+                    new ImageIcon(Objects.requireNonNull(this.getClass().getClassLoader().getResource(IMAGES_PATH + "Roberta.png"))),
                     buttons);
                 if ( n == 0 ) {
                     if ( MainController.this.connector != null ) {

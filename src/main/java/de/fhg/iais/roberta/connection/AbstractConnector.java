@@ -1,7 +1,8 @@
 package de.fhg.iais.roberta.connection;
 
-import de.fhg.iais.roberta.util.PropertyHelper;
 import de.fhg.iais.roberta.util.IOraListener;
+import de.fhg.iais.roberta.util.Pair;
+import de.fhg.iais.roberta.util.PropertyHelper;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public abstract class AbstractConnector implements IConnector {
     public void run() {
         this.running = true;
         LOG.info("Starting {} connector", this.brickName);
-        setupServerCommunicator();
+        this.serverCommunicator = new ServerCommunicator(this.serverAddress);
         LOG.info("Using server address {}", this.serverAddress);
         while ( this.running ) {
             runLoopBody();
@@ -94,6 +95,11 @@ public abstract class AbstractConnector implements IConnector {
     }
 
     @Override
+    public String getServerAddress() {
+        return this.serverCommunicator.getServerAddress();
+    }
+
+    @Override
     public void updateCustomServerAddress(String customServerAddress) {
         this.serverCommunicator.setServerAddress(customServerAddress);
         LOG.info("Now using custom address {}", customServerAddress);
@@ -103,10 +109,6 @@ public abstract class AbstractConnector implements IConnector {
     public void resetToDefaultServerAddress() {
         this.serverCommunicator.setServerAddress(this.serverAddress);
         LOG.info("Now using default address {}", this.serverAddress);
-    }
-
-    private void setupServerCommunicator() {
-        this.serverCommunicator = new ServerCommunicator(this.serverAddress);
     }
 
     /**
