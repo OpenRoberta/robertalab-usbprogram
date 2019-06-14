@@ -1,6 +1,8 @@
 package de.fhg.iais.roberta.ui.main;
 
 import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.connection.nao.Nao;
+import de.fhg.iais.roberta.connection.nao.NaoConnector;
 import de.fhg.iais.roberta.connection.arduino.Arduino;
 import de.fhg.iais.roberta.connection.arduino.ArduinoConnector;
 import de.fhg.iais.roberta.ui.IController;
@@ -120,8 +122,16 @@ public class MainController implements IController, IOraListenable<Robot> {
                 this.connected = true;
                 this.mainView.setNew(this.rb.getString("name"), this.connector.getBrickName(), this.connector.getServerAddress(), false);
                 this.mainView.setWaitForCmd();
+
+                if ( this.connector instanceof NaoConnector ) {
+                    this.mainView.showCustomNaoLogin();
+                }
                 break;
             case WAIT_UPLOAD:
+                if ( this.connector instanceof NaoConnector ) {
+                    Pair<String, String> naoLogin = this.mainView.getNaoLogin();
+                    ((NaoConnector) this.connector).setLogin(naoLogin.getFirst(), naoLogin.getSecond());
+                }
                 break;
             case DISCOVER:
                 this.setDiscover();
@@ -143,6 +153,9 @@ public class MainController implements IController, IOraListenable<Robot> {
                 break;
             case ERROR_BRICK:
                 this.showAttentionPopup("httpBrickInfo", "");
+                break;
+            case ERROR_UPLOAD_TO_ROBOT:
+                this.showAttentionPopup("uploadToNaoFailed", "");
                 break;
             case TOKEN_TIMEOUT:
                 this.showAttentionPopup("tokenTimeout", "");

@@ -26,6 +26,7 @@ public interface IConnector extends IOraListenable<IConnector.State> {
         ERROR_UPDATE,
         ERROR_BRICK,
         ERROR_DOWNLOAD,
+        ERROR_UPLOAD_TO_ROBOT,
         TOKEN_TIMEOUT
     }
 
@@ -37,7 +38,7 @@ public interface IConnector extends IOraListenable<IConnector.State> {
     String CMD_ISRUNNING = "isrunning";
 
     String CMD_REPEAT = "repeat";
-    String CMD_ABORT = "abort";
+    String CMD_ABORT = "abortNAO";
     String CMD_UPDATE = "update";
     String CMD_DOWNLOAD = "download";
     String CMD_CONFIGURATION = "configuration";

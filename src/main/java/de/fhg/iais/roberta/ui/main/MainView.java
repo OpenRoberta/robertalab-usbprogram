@@ -222,6 +222,14 @@ public class MainView extends JFrame {
     private final JLabel lblCustomPort = new JLabel();
     private final JComboBox<String> cmbBoxCustomPort = new JComboBox<>();
 
+    // - Nao Login -
+    private static final String CARD_NAO_LOGIN = "naoLogin";
+    private final JPanel pnlNaoLogin = new JPanel();
+    private final JLabel lblNaoUsername = new JLabel();
+    private final JTextField txtFldNaoUsername = new JTextField();
+    private final JLabel lblNaoPassword = new JLabel();
+    private final JTextField txtFldNaoPassword = new JTextField();
+
     // - Custom Empty -
     private static final String CARD_CUSTOM_EMPTY = "customEmpty";
 
@@ -642,6 +650,11 @@ public class MainView extends JFrame {
         cl.show(this.pnlCustomContainer, CARD_ADDRESS);
     }
 
+    void showCustomNaoLogin() {
+        CardLayout cl = (CardLayout) this.pnlCustomContainer.getLayout();
+        cl.show(this.pnlCustomContainer, CARD_NAO_LOGIN);
+    }
+
     private void showCustomEmpty() {
         CardLayout cl = (CardLayout) this.pnlCustomContainer.getLayout();
         cl.show(this.pnlCustomContainer, CARD_CUSTOM_EMPTY);
@@ -700,6 +713,17 @@ public class MainView extends JFrame {
             this.cmbBoxCustomIp.addItem(address.getFirst());
             this.cmbBoxCustomPort.addItem(address.getSecond());
         }
+    }
+
+    // NAO
+    Pair<String, String> getNaoLogin() {
+        String username = this.txtFldNaoUsername.getText();
+        String password = this.txtFldNaoPassword.getText();
+        return new Pair<>(username, password);
+    }
+
+    void setNaoUsername(String username) {
+        this.txtFldNaoUsername.setText(username);
     }
 
     // Other

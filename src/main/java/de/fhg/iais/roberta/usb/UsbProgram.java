@@ -7,6 +7,9 @@ import de.fhg.iais.roberta.connection.arduino.ArduinoDetector;
 import de.fhg.iais.roberta.connection.ev3.Ev3;
 import de.fhg.iais.roberta.connection.ev3.Ev3Connector;
 import de.fhg.iais.roberta.connection.ev3.Ev3Detector;
+import de.fhg.iais.roberta.connection.nao.Nao;
+import de.fhg.iais.roberta.connection.nao.NaoConnector;
+import de.fhg.iais.roberta.connection.nao.NaoDetector;
 import de.fhg.iais.roberta.ui.main.MainController;
 import de.fhg.iais.roberta.util.PropertyHelper;
 import org.slf4j.Logger;
@@ -28,7 +31,8 @@ class UsbProgram {
 
     private final Ev3Detector ev3Detector = new Ev3Detector();
     private final ArduinoDetector arduinoDetector = new ArduinoDetector();
-    private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.arduinoDetector, this.ev3Detector));
+    private final NaoDetector naoDetector = new NaoDetector();
+    private final RobotDetectorHelper robotDetectorHelper = new RobotDetectorHelper(Arrays.asList(this.arduinoDetector, this.ev3Detector, this.naoDetector));
 
     UsbProgram() {
         ResourceBundle messages = ResourceBundle.getBundle(PropertyHelper.getInstance().getProperty("messagesBundle"), Locale.getDefault());
@@ -89,6 +93,8 @@ class UsbProgram {
                 connector = new Ev3Connector();
             } else if (selectedRobot instanceof Arduino) {
                 connector = new ArduinoConnector((Arduino) selectedRobot);
+            } else if (selectedRobot instanceof Nao) {
+                connector = new NaoConnector((Nao) selectedRobot);
             } else {
                 throw new UnsupportedOperationException("Selected robot not supported!");
             }
