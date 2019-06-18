@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_CLOSE_HELP;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_EV3;
+import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_NAO;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_OTHER;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_ABOUT;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_COPY;
@@ -265,6 +266,14 @@ public class MainController implements IController, IOraListenable<Robot> {
                     MainController.this.helpDialog.dispose();
                     try {
                         Desktop.getDesktop().browse(new URI(MainController.this.rb.getString("linkEv3UsbWiki")));
+                    } catch ( IOException | URISyntaxException e1 ) {
+                        LOG.error("Could not open browser: {}", e1.getMessage());
+                    }
+                    break;
+                case CMD_SELECT_NAO:
+                    MainController.this.helpDialog.dispose();
+                    try {
+                        Desktop.getDesktop().browse(new URI(MainController.this.rb.getString("linkNaoWiki")));
                     } catch ( IOException | URISyntaxException e1 ) {
                         LOG.error("Could not open browser: {}", e1.getMessage());
                     }

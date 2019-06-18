@@ -27,6 +27,7 @@ import static de.fhg.iais.roberta.ui.main.MainView.IMAGES_PATH;
 
 class HelpDialog extends JDialog {
     static final String CMD_SELECT_EV3 = "select_ev3";
+    static final String CMD_SELECT_NAO = "select_nao";
     static final String CMD_SELECT_OTHER = "select_other";
     static final String CMD_CLOSE_HELP = "close_help";
 
@@ -38,6 +39,7 @@ class HelpDialog extends JDialog {
 
     private final JPanel pnlRobots = new JPanel();
     private final OraButton butEv3 = new OraButton();
+    private final OraButton butNao = new OraButton();
     private final OraButton butOther = new OraButton();
 
     private final JButton butClose = new JButton();
@@ -48,7 +50,7 @@ class HelpDialog extends JDialog {
     HelpDialog(Frame frame, ResourceBundle messages, ActionListener listener) {
         super(frame);
         // General
-        this.setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
+        this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.PAGE_AXIS));
         this.setResizable(false);
 
         JPanel jPanel = new JPanel();
@@ -87,12 +89,16 @@ class HelpDialog extends JDialog {
         this.butEv3.setActionCommand(CMD_SELECT_EV3);
         this.butEv3.addActionListener(listener);
         this.butEv3.setText(messages.getString("ev3"));
+        this.pnlRobots.add(this.butNao);
+        this.butNao.setActionCommand(CMD_SELECT_NAO);
+        this.butNao.addActionListener(listener);
+        this.butNao.setText(messages.getString("nao"));
         this.pnlRobots.add(this.butOther);
         this.butOther.setActionCommand(CMD_SELECT_OTHER);
         this.butOther.addActionListener(listener);
         this.butOther.setText(messages.getString("other"));
 
-        setUndecorated(true);
-        pack();
+        this.setUndecorated(true);
+        this.pack();
     }
 }
