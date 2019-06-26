@@ -39,7 +39,7 @@ class UsbProgram {
     void run() {
         long previousTime = System.currentTimeMillis();
         long helpTimer = 0L;
-        boolean helpNotShown = true;
+        boolean showHelp = true;
 
         Map<Integer, String> errors = this.arduinoDetector.getReadIdFileErrors();
         if ( !errors.isEmpty() ) {
@@ -69,9 +69,9 @@ class UsbProgram {
                     Thread.sleep(TIMEOUT);
                     helpTimer += (System.currentTimeMillis() - previousTime);
 
-                    if ( (helpTimer > HELP_THRESHOLD) && helpNotShown ) {
+                    if ( (helpTimer > HELP_THRESHOLD) && showHelp ) {
                         this.controller.showHelp();
-                        helpNotShown = false;
+                        showHelp = false;
                     }
                 } catch ( InterruptedException e ) {
                     LOG.error("Thread was interrupted while waiting for a robot selection: {}", e.getMessage());
@@ -94,6 +94,8 @@ class UsbProgram {
             }
             this.controller.setConnector(connector);
             connector.run(); // Blocking until the connector is finished
+
+            showHelp = false;
         }
     }
 }

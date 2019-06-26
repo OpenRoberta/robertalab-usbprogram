@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
+import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_CLOSE_HELP;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_EV3;
 import static de.fhg.iais.roberta.ui.main.HelpDialog.CMD_SELECT_OTHER;
 import static de.fhg.iais.roberta.ui.main.MainView.CMD_ABOUT;
@@ -263,6 +264,9 @@ public class MainController implements IController, IOraListenable<Robot> {
                         MainController.this.connector.interrupt();
                     }
                     setDiscover();
+                    break;
+                case CMD_CLOSE_HELP:
+                    MainController.this.helpDialog.dispose();
                     break;
                 case CMD_COPY:
                     StringSelection stringSelection = new StringSelection(connector.getToken());

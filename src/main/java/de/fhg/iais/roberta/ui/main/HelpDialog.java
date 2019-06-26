@@ -2,21 +2,33 @@ package de.fhg.iais.roberta.ui.main;
 
 import de.fhg.iais.roberta.ui.OraButton;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Objects;
 import java.util.ResourceBundle;
+
+import static de.fhg.iais.roberta.ui.main.MainView.IMAGES_PATH;
 
 class HelpDialog extends JDialog {
     static final String CMD_SELECT_EV3 = "select_ev3";
     static final String CMD_SELECT_OTHER = "select_other";
+    static final String CMD_CLOSE_HELP = "close_help";
 
     private final JPanel pnlGreet = new JPanel();
     private final JLabel lblGreet = new JLabel();
@@ -28,17 +40,34 @@ class HelpDialog extends JDialog {
     private final OraButton butEv3 = new OraButton();
     private final OraButton butOther = new OraButton();
 
+    private final JButton butClose = new JButton();
+
+    private static final Icon TIMES =
+            new ImageIcon(Objects.requireNonNull(MainView.class.getClassLoader().getResource(IMAGES_PATH + "times.png")));
+
     HelpDialog(Frame frame, ResourceBundle messages, ActionListener listener) {
         super(frame);
         // General
         this.setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
         this.setResizable(false);
 
-        this.add(this.pnlGreet);
+        JPanel jPanel = new JPanel();
+        this.add(jPanel);
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.LINE_AXIS));
+
+        jPanel.add(this.pnlGreet);
         this.pnlGreet.setLayout(new FlowLayout(FlowLayout.LEADING));
         this.pnlGreet.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
         this.pnlGreet.add(this.lblGreet);
         this.lblGreet.setText(messages.getString("helpConnectionGreeting"));
+
+        jPanel.add(this.butClose);
+        this.butClose.setIcon(TIMES);
+        this.butClose.setBorder(null);
+        this.butClose.setBackground(Color.WHITE);
+        this.butClose.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+        this.butClose.setActionCommand(CMD_CLOSE_HELP);
+        this.butClose.addActionListener(listener);
 
         this.add(this.pnlInfo);
         this.pnlInfo.setLayout(new FlowLayout(FlowLayout.LEADING));
